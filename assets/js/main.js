@@ -1,3 +1,4 @@
+const statNumbers = document.querySelectorAll("[data-count]");
 const carousel = document.querySelector("[data-carousel]");
 
 if (carousel) {
@@ -64,18 +65,18 @@ const mosaic = document.querySelector("[data-mosaic]");
 
 if (mosaic) {
   const images = [
-    "assets/images/portfolio/portfolio-01.jpg",
-    "assets/images/gallery/gallery-01.jpg",
-    "assets/images/portfolio/portfolio-02.jpg",
-    "assets/images/gallery/gallery-02.jpg",
-    "assets/images/gallery/gallery-03.jpg",
-    "assets/images/gallery/gallery-04.jpg",
-    "assets/images/galleries/vlad-denisa.jpg",
-    "assets/images/galleries/david-esra.jpg",
-    "assets/images/galleries/rus-a-viii-a.jpg",
-    "assets/images/galleries/babeni-a-viii-a.jpg",
-    "assets/images/galleries/letca-a-viii-a.jpg",
-    "assets/images/portfolio/portfolio-04.jpg"
+    "assets/images/optimized/portfolio/portfolio-01.webp",
+    "assets/images/optimized/gallery/gallery-01.webp",
+    "assets/images/optimized/portfolio/portfolio-02.webp",
+    "assets/images/optimized/gallery/gallery-02.webp",
+    "assets/images/optimized/gallery/gallery-03.webp",
+    "assets/images/optimized/gallery/gallery-04.webp",
+    "assets/images/optimized/galleries/vlad-denisa.webp",
+    "assets/images/optimized/galleries/david-esra.webp",
+    "assets/images/optimized/galleries/rus-a-viii-a.webp",
+    "assets/images/optimized/galleries/babeni-a-viii-a.webp",
+    "assets/images/optimized/galleries/letca-a-viii-a.webp",
+    "assets/images/optimized/portfolio/portfolio-04.webp"
   ];
 
   function getImageOrientation(width, height) {

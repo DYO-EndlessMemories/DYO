@@ -136,6 +136,8 @@ a {
   font-size: 12px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(10px);
 }
 
 .mobile-menu summary::-webkit-details-marker {
@@ -147,23 +149,37 @@ a {
   top: calc(100% + 14px);
   right: 0;
 
-  min-width: 240px;
+  min-width: min(280px, calc(100vw - 48px));
   padding: 18px;
 
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
 
-  background: rgba(0, 0, 0, 0.96);
+  background:
+    radial-gradient(circle at top right, rgba(214, 195, 163, 0.13), transparent 42%),
+    rgba(0, 0, 0, 0.96);
   border: 1px solid var(--line);
-  backdrop-filter: blur(16px);
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(18px);
 }
 
 .mobile-menu nav a {
+  padding: 13px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.82);
   font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+}
+
+.mobile-menu nav a:last-child {
+  border-bottom: 0;
+}
+
+.mobile-menu nav a:hover,
+.mobile-menu nav a:focus-visible {
+  color: var(--gold);
 }
 
 /* Shared typography and layout */
@@ -275,7 +291,7 @@ a {
 
   background:
     linear-gradient(to right, rgba(0, 0, 0, 0.92), rgba(0, 0, 0, 0.22)),
-    url("../images/hero/hero-01.jpg");
+    url("../images/optimized/hero/hero-01.webp");
   background-size: cover;
   background-position: center;
   transform: scale(1.02);
@@ -604,19 +620,19 @@ a {
 .card-image-1 {
   background-image:
     linear-gradient(to top, rgba(0, 0, 0, 0.86), transparent 58%),
-    url("../images/portfolio/portfolio-01.jpg");
+    url("../images/optimized/portfolio/portfolio-01.webp");
 }
 
 .card-image-2 {
   background-image:
     linear-gradient(to top, rgba(0, 0, 0, 0.86), transparent 58%),
-    url("../images/portfolio/portfolio-02.jpg");
+    url("../images/optimized/portfolio/portfolio-02.webp");
 }
 
 .card-image-3 {
   background-image:
     linear-gradient(to top, rgba(0, 0, 0, 0.86), transparent 58%),
-    url("../images/portfolio/portfolio-03.jpg");
+    url("../images/optimized/portfolio/portfolio-03.webp");
 }
 
 .portfolio-card:hover .card-image {
@@ -711,19 +727,19 @@ a {
 }
 
 .slide-image-1 {
-  background-image: url("../images/hero/hero-01.jpg");
+  background-image: url("../images/optimized/hero/hero-01.webp");
 }
 
 .slide-image-2 {
-  background-image: url("../images/portfolio/portfolio-03.jpg");
+  background-image: url("../images/optimized/portfolio/portfolio-03.webp");
 }
 
 .slide-image-3 {
-  background-image: url("../images/galleries/rus-a-viii-a.jpg");
+  background-image: url("../images/optimized/galleries/rus-a-viii-a.webp");
 }
 
 .slide-image-4 {
-  background-image: url("../images/gallery/gallery-06.jpg");
+  background-image: url("../images/optimized/gallery/gallery-06.webp");
 }
 
 .portfolio-slide-content {
@@ -869,7 +885,7 @@ a {
   min-height: 520px;
   background:
     linear-gradient(to top, rgba(0, 0, 0, 0.75), transparent),
-    url("../images/portfolio/portfolio-04.jpg");
+    url("../images/optimized/portfolio/portfolio-04.webp");
   background-size: cover;
   background-position: center;
 }
@@ -947,27 +963,27 @@ a {
 .gallery-mockup div:nth-child(1) {
   grid-column: span 3;
   grid-row: span 2;
-  background-image: url("../images/gallery/gallery-01.jpg");
+  background-image: url("../images/optimized/gallery/gallery-01.webp");
 }
 
 .gallery-mockup div:nth-child(2) {
   grid-column: span 2;
   grid-row: span 1;
-  background-image: url("../images/gallery/gallery-02.jpg");
+  background-image: url("../images/optimized/gallery/gallery-02.webp");
   background-position: center 35%;
 }
 
 .gallery-mockup div:nth-child(3) {
   grid-column: span 1;
   grid-row: span 2;
-  background-image: url("../images/gallery/gallery-03.jpg");
+  background-image: url("../images/optimized/gallery/gallery-03.webp");
   background-position: center 25%;
 }
 
 .gallery-mockup div:nth-child(4) {
   grid-column: span 2;
   grid-row: span 1;
-  background-image: url("../images/gallery/gallery-04.jpg");
+  background-image: url("../images/optimized/gallery/gallery-04.webp");
   background-position: center 40%;
 }
 
@@ -1035,32 +1051,56 @@ a {
   transform: scale(1.06);
 }
 
+.gallery-status {
+  position: absolute;
+  top: 22px;
+  right: 22px;
+  z-index: 3;
+
+  padding: 8px 12px;
+
+  border: 1px solid rgba(214, 195, 163, 0.38);
+  background: rgba(0, 0, 0, 0.58);
+  color: var(--gold);
+  backdrop-filter: blur(10px);
+
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.gallery-status-featured {
+  border-color: rgba(255, 255, 255, 0.18);
+  color: var(--white);
+}
+
 .gallery-cover-1 {
-  background-image: url("../images/galleries/vlad-denisa.jpg");
+  background-image: url("../images/optimized/galleries/vlad-denisa.webp");
 }
 
 .gallery-cover-2 {
-  background-image: url("../images/galleries/david-esra.jpg");
+  background-image: url("../images/optimized/galleries/david-esra.webp");
 }
 
 .gallery-cover-3 {
-  background-image: url("../images/galleries/rus-a-viii-a.jpg");
+  background-image: url("../images/optimized/galleries/rus-a-viii-a.webp");
 }
 
 .gallery-cover-4 {
-  background-image: url("../images/galleries/babeni-a-viii-a.jpg");
+  background-image: url("../images/optimized/galleries/babeni-a-viii-a.webp");
 }
 
 .gallery-cover-5 {
-  background-image: url("../images/galleries/letca-a-viii-a.jpg");
+  background-image: url("../images/optimized/galleries/letca-a-viii-a.webp");
 }
 
 .gallery-cover-6 {
-  background-image: url("../images/galleries/ip-a-viii-a.jpeg");
+  background-image: url("../images/optimized/galleries/ip-a-viii-a.webp");
 }
 
 .gallery-cover-weddings-extra {
-  background-image: url("../images/galleries/weddings_extra.jpg");
+  background-image: url("../images/optimized/galleries/weddings_extra.webp");
 }
 
 .client-gallery-info {
@@ -1191,10 +1231,23 @@ body.modal-open {
   background: rgba(255, 255, 255, 0.055);
   color: var(--white);
 
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.ip-gallery-options strong {
+  display: block;
+  margin-bottom: 6px;
+
   font-size: 12px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.ip-gallery-options span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .ip-gallery-options a:hover,

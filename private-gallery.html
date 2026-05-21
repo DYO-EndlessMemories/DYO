@@ -64,6 +64,7 @@
         target="_blank"
         rel="noopener"
       >
+        <span class="gallery-status">Disponibilă</span>
         <div class="client-gallery-image gallery-cover-1"></div>
         <div class="client-gallery-info">
           <h3>Vlad & Denisa</h3>
@@ -77,6 +78,7 @@
         target="_blank"
         rel="noopener"
       >
+        <span class="gallery-status">Disponibilă</span>
         <div class="client-gallery-image gallery-cover-2"></div>
         <div class="client-gallery-info">
           <h3>David & Esra</h3>
@@ -90,6 +92,7 @@
         target="_blank"
         rel="noopener"
       >
+        <span class="gallery-status">Disponibilă</span>
         <div class="client-gallery-image gallery-cover-3"></div>
         <div class="client-gallery-info">
           <h3>Rus a VIII-a</h3>
@@ -103,6 +106,7 @@
         target="_blank"
         rel="noopener"
       >
+        <span class="gallery-status">Disponibilă</span>
         <div class="client-gallery-image gallery-cover-weddings-extra"></div>
       
         <div class="client-gallery-info">
@@ -117,6 +121,7 @@
         target="_blank"
         rel="noopener"
       >
+        <span class="gallery-status">Disponibilă</span>
         <div class="client-gallery-image gallery-cover-4"></div>
         <div class="client-gallery-info">  
           <h3>Babeni a VIII-a</h3>
@@ -130,6 +135,7 @@
         target="_blank"
         rel="noopener"
       >
+        <span class="gallery-status">Disponibilă</span>
         <div class="client-gallery-image gallery-cover-5"></div>
         <div class="client-gallery-info">
           <h3>Letca a VIII-a</h3>
@@ -137,17 +143,18 @@
         </div>
       </a>
 
-      <button
+      <a
         class="client-gallery-card client-gallery-button"
-        type="button"
+        href="#ip-gallery-options"
         data-ip-gallery-open
       >
+        <span class="gallery-status gallery-status-featured">Alege camera</span>
         <div class="client-gallery-image gallery-cover-6"></div>
         <div class="client-gallery-info">
           <h3>Ip a VIII-a</h3>
           <p>Alege camera pentru descărcare</p>
         </div>
-      </button>
+      </a>
       
     </div>
   </section>
@@ -188,10 +195,19 @@
       <h2 id="ip-gallery-title">Alege galeria</h2>
       <p class="ip-gallery-modal-text">Materialele sunt împărțite pe camere. Alege una dintre opțiunile de mai jos pentru a accesa galeria.</p>
 
-      <div class="ip-gallery-options">
-        <a href="https://drive.google.com/drive/folders/17LqJT0QvR9aW7E-OaEZiIkXcTzlgHJ7O?usp=sharing" target="_blank" rel="noopener">Camera 1.1</a>
-        <a href="https://drive.google.com/drive/folders/1mVTs2873dwrfu-T_nx67aiaQytZ8loYp?usp=drive_link" target="_blank" rel="noopener">Camera 1.2</a>
-        <a href="https://drive.google.com/drive/folders/1uAjQ_n6QXHcAmxhavj1A4aNpQfea0Dsd?usp=sharing" target="_blank" rel="noopener">Camera 2</a>
+      <div class="ip-gallery-options" id="ip-gallery-options">
+        <a href="https://drive.google.com/drive/folders/17LqJT0QvR9aW7E-OaEZiIkXcTzlgHJ7O?usp=sharing" target="_blank" rel="noopener">
+          <strong>Camera 1.1</strong>
+          <span>Accesează materialele din prima cameră.</span>
+        </a>
+        <a href="https://drive.google.com/drive/folders/1mVTs2873dwrfu-T_nx67aiaQytZ8loYp?usp=drive_link" target="_blank" rel="noopener">
+          <strong>Camera 1.2</strong>
+          <span>Accesează materialele din a doua galerie.</span>
+        </a>
+        <a href="https://drive.google.com/drive/folders/1uAjQ_n6QXHcAmxhavj1A4aNpQfea0Dsd?usp=sharing" target="_blank" rel="noopener">
+          <strong>Camera 2</strong>
+          <span>Accesează materialele camerei suplimentare.</span>
+        </a>
       </div>
     </div>
   </section>
@@ -224,7 +240,10 @@
         document.body.classList.remove("modal-open");
       };
 
-      ipGalleryOpen.addEventListener("click", openIpGallery);
+      ipGalleryOpen.addEventListener("click", (event) => {
+        event.preventDefault();
+        openIpGallery();
+      });
       ipGalleryCloseButtons.forEach((button) => button.addEventListener("click", closeIpGallery));
 
       document.addEventListener("keydown", (event) => {
