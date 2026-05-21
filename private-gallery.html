@@ -137,18 +137,17 @@
         </div>
       </a>
 
-      <a
-        class="client-gallery-card"
-        href="https://drive.google.com/drive/folders/1ofWHlH5ifOH8hwfPfhnF8Uq8Tdjjf7gP?usp=drive_link"
-        target="_blank"
-        rel="noopener"
+      <button
+        class="client-gallery-card client-gallery-button"
+        type="button"
+        data-ip-gallery-open
       >
         <div class="client-gallery-image gallery-cover-6"></div>
         <div class="client-gallery-info">
           <h3>Ip a VIII-a</h3>
-          <p>Deschide galeria absolvenților</p>
+          <p>Alege camera pentru descărcare</p>
         </div>
-      </a>
+      </button>
       
     </div>
   </section>
@@ -179,6 +178,24 @@
 </div>  
   </section>
 
+  <section class="ip-gallery-modal" data-ip-gallery-modal hidden>
+    <div class="ip-gallery-modal-backdrop" data-ip-gallery-close></div>
+
+    <div class="ip-gallery-modal-panel" role="dialog" aria-modal="true" aria-labelledby="ip-gallery-title">
+      <button class="ip-gallery-modal-close" type="button" data-ip-gallery-close aria-label="Închide">×</button>
+
+      <p class="eyebrow">Ip a VIII-a</p>
+      <h2 id="ip-gallery-title">Alege galeria</h2>
+      <p class="ip-gallery-modal-text">Materialele sunt împărțite pe camere. Deschide linkul de care ai nevoie.</p>
+
+      <div class="ip-gallery-options">
+        <a href="https://drive.google.com/drive/folders/17LqJT0QvR9aW7E-OaEZiIkXcTzlgHJ7O?usp=sharing" target="_blank" rel="noopener">Camera 1.1</a>
+        <a href="https://drive.google.com/drive/folders/1mVTs2873dwrfu-T_nx67aiaQytZ8loYp?usp=drive_link" target="_blank" rel="noopener">Camera 1.2</a>
+        <a href="https://drive.google.com/drive/folders/1uAjQ_n6QXHcAmxhavj1A4aNpQfea0Dsd?usp=sharing" target="_blank" rel="noopener">Camera 2</a>
+      </div>
+    </div>
+  </section>
+
   <section class="final-cta">
     <p class="eyebrow">Need access?</p>
     <h2>Nu găsești galeria?</h2>
@@ -191,5 +208,31 @@
     <p>© 2025 DYO Endless Memory. Foto · Video · Cinematografie.</p>
     <a href="index.html">DYO</a>
   </footer>
+  <script>
+    const ipGalleryOpen = document.querySelector("[data-ip-gallery-open]");
+    const ipGalleryModal = document.querySelector("[data-ip-gallery-modal]");
+    const ipGalleryCloseButtons = document.querySelectorAll("[data-ip-gallery-close]");
+
+    if (ipGalleryOpen && ipGalleryModal) {
+      const openIpGallery = () => {
+        ipGalleryModal.hidden = false;
+        document.body.classList.add("modal-open");
+      };
+
+      const closeIpGallery = () => {
+        ipGalleryModal.hidden = true;
+        document.body.classList.remove("modal-open");
+      };
+
+      ipGalleryOpen.addEventListener("click", openIpGallery);
+      ipGalleryCloseButtons.forEach((button) => button.addEventListener("click", closeIpGallery));
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !ipGalleryModal.hidden) {
+          closeIpGallery();
+        }
+      });
+    }
+  </script>
 </body>
 </html>

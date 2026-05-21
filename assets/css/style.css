@@ -993,6 +993,20 @@ a {
   background: var(--dark-soft);
 }
 
+.client-gallery-button {
+  width: 100%;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.client-gallery-button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 4px;
+}
+
 .client-gallery-image {
   position: absolute;
   inset: 0;
@@ -1097,6 +1111,95 @@ a {
 .client-gallery-card.is-disabled:hover .client-gallery-image {
   transform: none;
   filter: grayscale(0.25) brightness(0.78);
+}
+
+.ip-gallery-modal[hidden] {
+  display: none;
+}
+
+body.modal-open {
+  overflow: hidden;
+}
+
+.ip-gallery-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.ip-gallery-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.76);
+  backdrop-filter: blur(8px);
+}
+
+.ip-gallery-modal-panel {
+  position: relative;
+  z-index: 1;
+  width: min(520px, 100%);
+  padding: clamp(30px, 5vw, 46px);
+
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(circle at top right, rgba(214, 195, 163, 0.13), transparent 36%),
+    rgba(10, 10, 10, 0.98);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.55);
+}
+
+.ip-gallery-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+
+  border: 0;
+  background: transparent;
+  color: var(--gold);
+  font-size: 32px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ip-gallery-modal-panel h2 {
+  margin: 0 0 14px;
+  font-family: var(--heading);
+  font-size: clamp(34px, 5vw, 48px);
+  font-weight: 300;
+}
+
+.ip-gallery-modal-text {
+  margin: 0 0 26px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.ip-gallery-options {
+  display: grid;
+  gap: 12px;
+}
+
+.ip-gallery-options a {
+  padding: 16px 18px;
+
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--white);
+
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.ip-gallery-options a:hover,
+.ip-gallery-options a:focus-visible {
+  border-color: rgba(214, 195, 163, 0.72);
+  background: rgba(214, 195, 163, 0.12);
+  color: var(--gold);
 }
 
 .upcoming-galleries-section {
