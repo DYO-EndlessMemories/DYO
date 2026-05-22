@@ -1,0 +1,100 @@
+[
+  {
+    "name": "wedding-01",
+    "src": "D:/Sedinte foto/Nunta extra/Untitled Export/DYO_0804.jpg",
+    "dest": "assets/images/optimized/portfolio-curated/wedding-01.webp",
+    "before": 8340304,
+    "after": 140012
+  },
+  {
+    "name": "wedding-02",
+    "src": "D:/Sedinte foto/Nunta extra/Untitled Export/DYO_0807.jpg",
+    "dest": "assets/images/optimized/portfolio-curated/wedding-02.webp",
+    "before": 9559126,
+    "after": 122996
+  },
+  {
+    "name": "wedding-03",
+    "src": "D:/Sedinte foto/Nunta extra/Untitled Export/DYO_0811.jpg",
+    "dest": "assets/images/optimized/portfolio-curated/wedding-03.webp",
+    "before": 9238160,
+    "after": 108346
+  },
+  {
+    "name": "ip-portrait-01",
+    "src": "D:/Sedinte foto/Ip/Extra/Untitled Export/DYO_6837.jpg",
+    "dest": "assets/images/optimized/portfolio-curated/ip-portrait-01.webp",
+    "before": 13602095,
+    "after": 731170
+  },
+  {
+    "name": "ip-portrait-02",
+    "src": "D:/Sedinte foto/Ip/Extra/Untitled Export/DYO_7423.jpg",
+    "dest": "assets/images/optimized/portfolio-curated/ip-portrait-02.webp",
+    "before": 10729942,
+    "after": 528310
+  },
+  {
+    "name": "ip-portrait-03",
+    "src": "D:/Sedinte foto/Ip/Extra/Untitled Export/DYO_7423-2.jpg",
+    "dest": "assets/images/optimized/portfolio-curated/ip-portrait-03.webp",
+    "before": 7939514,
+    "after": 459066
+  },
+  {
+    "name": "babeni-ale-01",
+    "src": "D:/Sedinte foto/Babeni Editate/Ale/Untitled Export/Ale-2526.jpg",
+    "dest": "assets/images/optimized/portfolio-curated/babeni-ale-01.webp",
+    "before": 13158664,
+    "after": 389856
+  },
+  {
+    "name": "babeni-ale-02",
+    "src": "D:/Sedinte foto/Babeni Editate/Ale/Untitled Export/Ale-2526-2.jpg",
+    "dest": "assets/images/optimized/portfolio-curated/babeni-ale-02.webp",
+    "before": 13883292,
+    "after": 411000
+  },
+  {
+    "name": "babeni-ale-03",
+    "src": "D:/Sedinte foto/Babeni Editate/Ale/Untitled Export/Ale-2526-3.jpg",
+    "dest": "assets/images/optimized/portfolio-curated/babeni-ale-03.webp",
+    "before": 12659777,
+    "after": 380104
+  },
+  {
+    "name": "rus-david-01",
+    "src": "D:/Sedinte foto/Rus Sedinta 1 editate/Untitled Export/David/Untitled Export/Rus David BW-1.jpg",
+    "dest": "assets/images/optimized/portfolio-curated/rus-david-01.webp",
+    "before": 10023683,
+    "after": 586012
+  },
+  {
+    "name": "rus-david-02",
+    "src": "D:/Sedinte foto/Rus Sedinta 1 editate/Untitled Export/David/Untitled Export/Rus David BW-4.jpg",
+    "dest": "assets/images/optimized/portfolio-curated/rus-david-02.webp",
+    "before": 8138794,
+    "after": 338200
+  },
+  {
+    "name": "rus-david-03",
+    "src": "D:/Sedinte foto/Rus Sedinta 1 editate/Untitled Export/David/Untitled Export/Rus David BW-8.jpg",
+    "dest": "assets/images/optimized/portfolio-curated/rus-david-03.webp",
+    "before": 8170827,
+    "after": 359860
+  },
+  {
+    "name": "rus-david-04",
+    "src": "D:/Sedinte foto/Rus Sedinta 1 editate/Untitled Export/David/Untitled Export/Rus David BW-12.jpg",
+    "dest": "assets/images/optimized/portfolio-curated/rus-david-04.webp",
+    "before": 13669035,
+    "after": 1136860
+  },
+  {
+    "name": "rus-david-05",
+    "src": "D:/Sedinte foto/Rus Sedinta 1 editate/Untitled Export/David/Untitled Export/Rus David BW-14.jpg",
+    "dest": "assets/images/optimized/portfolio-curated/rus-david-05.webp",
+    "before": 11480760,
+    "after": 1174698
+  }
+]

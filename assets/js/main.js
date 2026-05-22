@@ -1,4 +1,5 @@
 const statNumbers = document.querySelectorAll("[data-count]");
+const portfolioStories = document.querySelectorAll(".portfolio-story");
 const carousel = document.querySelector("[data-carousel]");
 
 if (carousel) {
@@ -63,20 +64,37 @@ if (carousel) {
 
 const mosaic = document.querySelector("[data-mosaic]");
 
+if (portfolioStories.length) {
+  const storyObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        entry.target.classList.toggle("is-visible", entry.isIntersecting);
+      });
+    },
+    {
+      threshold: 0.22,
+      rootMargin: "-8% 0px -18% 0px"
+    }
+  );
+
+  portfolioStories.forEach((story) => storyObserver.observe(story));
+}
+
+
 if (mosaic) {
   const images = [
-    "assets/images/optimized/portfolio/portfolio-01.webp",
-    "assets/images/optimized/gallery/gallery-01.webp",
-    "assets/images/optimized/portfolio/portfolio-02.webp",
-    "assets/images/optimized/gallery/gallery-02.webp",
-    "assets/images/optimized/gallery/gallery-03.webp",
-    "assets/images/optimized/gallery/gallery-04.webp",
-    "assets/images/optimized/galleries/vlad-denisa.webp",
-    "assets/images/optimized/galleries/david-esra.webp",
-    "assets/images/optimized/galleries/rus-a-viii-a.webp",
-    "assets/images/optimized/galleries/babeni-a-viii-a.webp",
-    "assets/images/optimized/galleries/letca-a-viii-a.webp",
-    "assets/images/optimized/portfolio/portfolio-04.webp"
+    "assets/images/optimized/portfolio-curated/wedding-01.webp",
+    "assets/images/optimized/portfolio-curated/ip-portrait-02.webp",
+    "assets/images/optimized/portfolio-curated/babeni-ale-02.webp",
+    "assets/images/optimized/portfolio-curated/rus-david-04.webp",
+    "assets/images/optimized/portfolio-curated/wedding-02.webp",
+    "assets/images/optimized/portfolio-curated/ip-portrait-01.webp",
+    "assets/images/optimized/portfolio-curated/babeni-ale-01.webp",
+    "assets/images/optimized/portfolio-curated/rus-david-01.webp",
+    "assets/images/optimized/portfolio-curated/wedding-03.webp",
+    "assets/images/optimized/portfolio-curated/ip-portrait-03.webp",
+    "assets/images/optimized/portfolio-curated/babeni-ale-03.webp",
+    "assets/images/optimized/portfolio-curated/rus-david-05.webp"
   ];
 
   function getImageOrientation(width, height) {

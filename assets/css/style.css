@@ -1339,6 +1339,91 @@ body.modal-open {
   line-height: 1.7;
 }
 
+/* Portfolio stories */
+
+.portfolio-stories-section {
+  background: linear-gradient(to bottom, #070707, #101010);
+}
+
+.portfolio-story {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.55fr) minmax(0, 1.05fr) minmax(220px, 0.75fr);
+  gap: 22px;
+  align-items: start;
+  padding: 44px 0;
+  border-top: 1px solid var(--line);
+}
+
+.portfolio-story:first-of-type {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.portfolio-story-intro {
+  position: sticky;
+  top: 110px;
+  padding-right: 18px;
+}
+
+.portfolio-story-intro h3 {
+  margin: 0 0 16px;
+  font-family: var(--heading);
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 1;
+  font-weight: 300;
+  letter-spacing: 0.025em;
+}
+
+.portfolio-story-intro p:not(.eyebrow) {
+  margin: 0;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.portfolio-story-feature,
+.portfolio-story-grid {
+  min-width: 0;
+}
+
+.portfolio-story-feature {
+  position: sticky;
+  top: 96px;
+  align-self: start;
+}
+
+.portfolio-story-feature,
+.portfolio-story-grid img {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.portfolio-story.is-visible .portfolio-story-feature,
+.portfolio-story.is-visible .portfolio-story-grid img {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.portfolio-story.is-visible .portfolio-story-grid img:nth-child(2) {
+  transition-delay: 0.12s;
+}
+
+.portfolio-story-feature img,
+.portfolio-story-grid img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  background: var(--dark-soft);
+}
+
+.portfolio-story-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+
 /* Contact */
 
 .contact-section {
@@ -1524,10 +1609,21 @@ body.modal-open {
   }
 
   .portfolio-grid,
+  .portfolio-story,
   .film-feature,
   .gallery-section,
   .contact-section {
     grid-template-columns: 1fr;
+  }
+
+  .portfolio-story-intro,
+  .portfolio-story-feature {
+    position: static;
+    padding-right: 0;
+  }
+
+  .portfolio-story-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .card-large {
@@ -1728,6 +1824,7 @@ body.modal-open {
   }
 
   .client-gallery-grid,
+  .portfolio-story-grid,
   .process-grid,
   .upcoming-gallery-list {
     grid-template-columns: 1fr;
