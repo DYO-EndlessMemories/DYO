@@ -754,6 +754,7 @@ a {
   justify-content: center;
 }
 
+.portfolio-slide-content h1,
 .portfolio-slide-content h2 {
   margin: 0;
   font-family: var(--heading);
@@ -1855,7 +1856,8 @@ body.modal-open {
     padding-bottom: 86px;
   }
 
-  .portfolio-slide-content h2 {
+  .portfolio-slide-content h1,
+.portfolio-slide-content h2 {
     font-size: clamp(34px, 10vw, 46px);
     line-height: 1.04;
   }

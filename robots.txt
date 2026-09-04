@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://dyo-endlessmemories.github.io/DYO/sitemap.xml
