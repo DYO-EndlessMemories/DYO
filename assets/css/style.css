@@ -1456,6 +1456,29 @@ body.modal-open {
   text-transform: uppercase;
 }
 
+.contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.contact-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  transition: border-color 0.25s ease, color 0.25s ease, background 0.25s ease;
+}
+
+.contact-action:hover,
+.contact-action:focus-visible {
+  border-color: var(--gold);
+  background: rgba(214, 195, 163, 0.1);
+}
+
 .social-link {
   display: inline-flex;
   align-items: center;
