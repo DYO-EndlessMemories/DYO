@@ -1154,7 +1154,8 @@ a {
   filter: grayscale(0.25) brightness(0.78);
 }
 
-.ip-gallery-modal[hidden] {
+.ip-gallery-modal[hidden],
+.contact-choice-modal[hidden] {
   display: none;
 }
 
@@ -1162,7 +1163,8 @@ body.modal-open {
   overflow: hidden;
 }
 
-.ip-gallery-modal {
+.ip-gallery-modal,
+.contact-choice-modal {
   position: fixed;
   inset: 0;
   z-index: 100;
@@ -1172,14 +1174,16 @@ body.modal-open {
   padding: 24px;
 }
 
-.ip-gallery-modal-backdrop {
+.ip-gallery-modal-backdrop,
+.contact-choice-backdrop {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.76);
   backdrop-filter: blur(8px);
 }
 
-.ip-gallery-modal-panel {
+.ip-gallery-modal-panel,
+.contact-choice-panel {
   position: relative;
   z-index: 1;
   width: min(520px, 100%);
@@ -1194,7 +1198,8 @@ body.modal-open {
   box-shadow: 0 28px 90px rgba(0, 0, 0, 0.55);
 }
 
-.ip-gallery-modal-close {
+.ip-gallery-modal-close,
+.contact-choice-close {
   position: absolute;
   top: 16px;
   right: 18px;
@@ -1207,25 +1212,34 @@ body.modal-open {
   cursor: pointer;
 }
 
-.ip-gallery-modal-panel h2 {
+.ip-gallery-modal-panel h2,
+.contact-choice-panel h2 {
   margin: 0 0 14px;
   font-family: var(--heading);
   font-size: clamp(34px, 5vw, 48px);
   font-weight: 300;
 }
 
-.ip-gallery-modal-text {
+.ip-gallery-modal-text,
+.contact-choice-number {
   margin: 0 0 26px;
   color: var(--muted);
   line-height: 1.7;
 }
 
-.ip-gallery-options {
+.contact-choice-number {
+  color: var(--gold);
+  font-size: 18px;
+}
+
+.ip-gallery-options,
+.contact-choice-options {
   display: grid;
   gap: 12px;
 }
 
-.ip-gallery-options a {
+.ip-gallery-options a,
+.contact-choice-options a {
   padding: 16px 18px;
 
   border: 1px solid var(--line);
@@ -1233,6 +1247,13 @@ body.modal-open {
   color: var(--white);
 
   transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.contact-choice-options a {
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
 .ip-gallery-options strong {
@@ -1252,7 +1273,9 @@ body.modal-open {
 }
 
 .ip-gallery-options a:hover,
-.ip-gallery-options a:focus-visible {
+.ip-gallery-options a:focus-visible,
+.contact-choice-options a:hover,
+.contact-choice-options a:focus-visible {
   border-color: rgba(214, 195, 163, 0.72);
   background: rgba(214, 195, 163, 0.12);
   color: var(--gold);
@@ -1456,27 +1479,22 @@ body.modal-open {
   text-transform: uppercase;
 }
 
-.contact-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+.contact-phone-link {
+  width: fit-content;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--gold);
+  font: inherit;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  text-align: left;
+  cursor: pointer;
 }
 
-.contact-action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 42px;
-  padding: 0 16px;
-  border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.04);
-  transition: border-color 0.25s ease, color 0.25s ease, background 0.25s ease;
-}
-
-.contact-action:hover,
-.contact-action:focus-visible {
-  border-color: var(--gold);
-  background: rgba(214, 195, 163, 0.1);
+.contact-phone-link:hover,
+.contact-phone-link:focus-visible {
+  color: var(--white);
 }
 
 .social-link {
