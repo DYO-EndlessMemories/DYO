@@ -5,14 +5,6 @@
    ============================================================ */
 
 @font-face {
-  font-family: "Agatho Light Caps";
-  src: url("../fonts/Agatho_%20LightCAPS.otf") format("opentype");
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
   font-family: "Ms Claudy";
   src: url("../fonts/MsClaudy-Regular.otf") format("opentype");
   font-weight: 400;
@@ -36,7 +28,7 @@
 
   /* Agatho Light Caps in repo is a demo font (watermark). Use system stacks until licensed. */
   --offer-heading: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
-  --offer-script: "Snell Roundhand", "Segoe Script", "Apple Chancery", cursive;
+  --offer-script: "Ms Claudy", "Snell Roundhand", "Segoe Script", "Apple Chancery", cursive;
   --offer-body: "Helvetica Neue", Helvetica, Arial, sans-serif;
   --offer-x: clamp(20px, 5.5vw, 88px);
   --offer-max: 1120px;
@@ -172,11 +164,19 @@ body.offer-page {
 }
 
 .offer-note {
-  margin: 18px 0 0;
+  margin: 14px 0 0;
   font-size: 13px;
   letter-spacing: 0.04em;
   color: var(--pavement-shadow);
   font-style: italic;
+}
+
+.offer-sessions-note {
+  margin: 0;
+  max-width: 40rem;
+  color: var(--pavement-shadow);
+  font-size: clamp(14px, 1.4vw, 16px);
+  line-height: 1.55;
 }
 
 /* ---------- Hero ---------- */
@@ -205,9 +205,10 @@ body.offer-page {
   font-family: var(--offer-heading);
   font-weight: 400;
   font-size: clamp(36px, 6vw, 68px);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   line-height: 1.12;
   color: var(--urban-espresso);
+  text-transform: uppercase;
 }
 
 .offer-hero-sub {
@@ -274,10 +275,11 @@ body.offer-page {
   max-width: 42rem;
 }
 
-.offer-story p:last-child {
+.offer-story .offer-story-note {
   margin-bottom: 0;
   color: var(--pavement-shadow);
   font-size: clamp(14px, 1.4vw, 16px);
+  font-style: italic;
 }
 
 .offer-story strong {
@@ -356,55 +358,72 @@ body.offer-page {
   background: var(--sunlit-veil);
 }
 
-.package-base-strip {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
-  align-items: baseline;
-  gap: 12px 28px;
+/* Thin horizontal B offer bar — matches D/Y/O ivory + shadow language */
+.package-base-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 3vw, 28px);
   margin-top: 28px;
   margin-bottom: 18px;
-  padding: 14px 4px 16px;
-  border-top: 1px solid rgba(91, 74, 62, 0.18);
-  border-bottom: 1px solid rgba(91, 74, 62, 0.18);
-  color: var(--pavement-shadow);
-  font-size: 14px;
+  padding: 16px 22px;
+  min-height: 72px;
+  background: var(--ivory-silk);
+  border-radius: var(--offer-radius);
+  border: 1px solid rgba(91, 74, 62, 0.08);
+  box-shadow: var(--offer-shadow);
+  overflow: hidden;
 }
 
 .package-base-letter {
+  flex: 0 0 auto;
   font-family: var(--offer-heading);
-  font-size: 18px;
-  letter-spacing: 0.12em;
-  color: var(--urban-espresso);
-  opacity: 0.55;
+  font-size: clamp(28px, 3.5vw, 36px);
+  line-height: 1;
+  letter-spacing: 0.08em;
+  color: rgba(91, 74, 62, 0.22);
+  font-weight: 300;
+}
+
+.package-base-body {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .package-base-label {
-  margin: 0;
+  margin: 0 0 2px;
+  font-family: var(--offer-heading);
+  font-weight: 300;
+  font-size: clamp(16px, 1.8vw, 20px);
+  letter-spacing: 0.06em;
   color: var(--urban-espresso);
-  letter-spacing: 0.04em;
-}
-
-.package-base-price {
-  margin: 0;
-  font-weight: 600;
-  color: var(--urban-espresso);
-  white-space: nowrap;
 }
 
 .package-base-meta {
   margin: 0;
-  white-space: nowrap;
-  opacity: 0.85;
+  font-size: 13px;
+  color: var(--pavement-shadow);
 }
 
-@media (max-width: 720px) {
-  .package-base-strip {
-    grid-template-columns: auto 1fr;
-    gap: 6px 16px;
+.package-base-price {
+  flex: 0 0 auto;
+  margin: 0;
+  font-family: var(--offer-heading);
+  font-weight: 300;
+  font-size: clamp(20px, 2.4vw, 26px);
+  letter-spacing: 0.04em;
+  color: var(--urban-espresso);
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .package-base-card {
+    flex-wrap: wrap;
+    padding: 18px 18px;
   }
-  .package-base-price,
-  .package-base-meta {
-    grid-column: 2;
+  .package-base-price {
+    width: 100%;
+    padding-left: calc(clamp(28px, 3.5vw, 36px) + 16px);
   }
 }
 
@@ -444,14 +463,16 @@ body.offer-page {
 .package-card::before {
   content: attr(data-letter);
   position: absolute;
-  top: 14px;
-  right: 16px;
+  top: 50%;
+  right: 32%;
+  transform: translateY(-50%);
   font-family: var(--offer-heading);
-  font-size: 42px;
+  font-size: 56px;
   line-height: 1;
   letter-spacing: 0.04em;
-  color: rgba(91, 74, 62, 0.12);
-  transition: color 0.45s ease, transform 0.45s ease;
+  color: rgba(91, 74, 62, 0.1);
+  pointer-events: none;
+  transition: color 0.45s ease, transform 0.45s ease, right 0.45s ease;
 }
 
 .package-card.is-highlight {
@@ -463,21 +484,19 @@ body.offer-page {
 
 .package-card.is-highlight::before {
   color: var(--dyo-gold-soft);
-  transform: scale(1.08);
+  transform: translateY(-50%) scale(1.08);
 }
 
-.package-card h3 {
-  margin: 0 0 6px;
+/* Size is the main heading on D/Y/O cards */
+.package-card h3.package-size,
+.package-size {
+  margin: 0 0 14px;
   font-family: var(--offer-heading);
   font-weight: 300;
-  font-size: 22px;
-  letter-spacing: 0.1em;
-}
-
-.package-size {
-  margin: 0 0 16px;
-  color: var(--pavement-shadow);
-  font-size: 14px;
+  font-size: clamp(22px, 2.6vw, 28px);
+  letter-spacing: 0.06em;
+  color: var(--urban-espresso);
+  line-height: 1.2;
 }
 
 .package-price {
@@ -588,6 +607,48 @@ body.offer-page {
 .offer-gallery .offer-inner {
   overflow: hidden;
   max-width: min(var(--offer-max), 100%);
+}
+
+.gallery-heading-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.gallery-heading-text .offer-title {
+  margin-bottom: 0;
+}
+
+.gallery-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(91, 74, 62, 0.22);
+  background: transparent;
+  color: var(--urban-espresso);
+  font-family: var(--offer-body);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.gallery-refresh-btn:hover {
+  background: rgba(91, 74, 62, 0.05);
+  border-color: var(--urban-espresso);
+}
+
+.gallery-refresh-btn span {
+  font-size: 16px;
+  line-height: 1;
 }
 
 .justified-gallery {
@@ -741,31 +802,36 @@ body.offer-page {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   border: 1px solid transparent;
+  cursor: pointer;
   transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
 }
 
 .btn-offer-primary,
 a.btn-offer-primary,
 a.btn-offer-primary:link,
-a.btn-offer-primary:visited {
+a.btn-offer-primary:visited,
+button.btn-offer-primary {
   background: var(--urban-espresso) !important;
   color: #ffffff !important;
   -webkit-text-fill-color: #ffffff;
 }
 
 .btn-offer-primary:hover,
-a.btn-offer-primary:hover {
+a.btn-offer-primary:hover,
+button.btn-offer-primary:hover {
   background: #4a3c32 !important;
   color: #ffffff !important;
 }
 
-.btn-offer-secondary {
+.btn-offer-secondary,
+button.btn-offer-secondary {
   background: transparent;
   color: var(--urban-espresso);
   border-color: rgba(91, 74, 62, 0.28);
 }
 
-.btn-offer-secondary:hover {
+.btn-offer-secondary:hover,
+button.btn-offer-secondary:hover {
   border-color: var(--urban-espresso);
   background: rgba(91, 74, 62, 0.04);
 }
@@ -783,10 +849,13 @@ a.btn-offer-primary:hover {
 
 .cta-signature {
   margin-top: 36px;
-  font-family: var(--offer-script);
-  font-size: clamp(36px, 5vw, 56px);
+  font-family: "Ms Claudy", cursive;
+  font-size: clamp(40px, 5.5vw, 56px);
+  line-height: 0.9;
+  font-weight: 400;
+  letter-spacing: 0;
   color: var(--urban-espresso);
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
 .offer-footer {
@@ -798,6 +867,138 @@ a.btn-offer-primary:hover {
   color: var(--pavement-shadow);
   border-top: 1px solid rgba(91, 74, 62, 0.08);
   background: var(--ivory-silk);
+}
+
+/* ---------- Inquiry modal (cream theme) ---------- */
+
+.offer-modal[hidden] {
+  display: none;
+}
+
+body.modal-open {
+  overflow: hidden;
+}
+
+.offer-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.offer-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(91, 74, 62, 0.45);
+  backdrop-filter: blur(6px);
+}
+
+.offer-modal-panel {
+  position: relative;
+  z-index: 1;
+  width: min(480px, 100%);
+  max-height: calc(100svh - 48px);
+  overflow-y: auto;
+  padding: clamp(28px, 4vw, 40px);
+  border-radius: var(--offer-radius);
+  border: 1px solid rgba(91, 74, 62, 0.1);
+  background:
+    radial-gradient(ellipse 70% 50% at 100% 0%, rgba(214, 195, 163, 0.35), transparent 55%),
+    var(--sunlit-veil);
+  box-shadow: 0 28px 80px rgba(91, 74, 62, 0.22);
+  color: var(--urban-espresso);
+  text-align: left;
+}
+
+.offer-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  border: 0;
+  background: transparent;
+  color: var(--pavement-shadow);
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.offer-modal-close:hover {
+  color: var(--urban-espresso);
+}
+
+.offer-modal-panel .offer-title {
+  font-size: clamp(26px, 4vw, 36px);
+  margin-bottom: 10px;
+}
+
+.offer-modal-lead {
+  margin: 0 0 22px;
+  color: var(--pavement-shadow);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.offer-inquiry-form {
+  display: grid;
+  gap: 14px;
+}
+
+.offer-field {
+  display: grid;
+  gap: 6px;
+}
+
+.offer-field span {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pavement-shadow);
+}
+
+.offer-field span small {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+.offer-field abbr {
+  text-decoration: none;
+  color: var(--dyo-gold-soft);
+}
+
+.offer-field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(91, 74, 62, 0.18);
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--urban-espresso);
+  font-family: var(--offer-body);
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.offer-field input:focus {
+  border-color: var(--dyo-gold-soft);
+  background: #fff;
+}
+
+.offer-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.offer-modal-actions .btn-offer {
+  flex: 1 1 auto;
+  min-width: 120px;
 }
 
 /* Reduced motion */

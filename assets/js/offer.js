@@ -1,6 +1,7 @@
 /**
  * DYO — Albume Absolvenți (Promoția 2027)
  * Justified gallery + shuffle + scroll-linked D/Y/O → package highlight
+ * + inquiry modal (WhatsApp / e-mail)
  */
 (function () {
   "use strict";
@@ -11,22 +12,22 @@
   // before images decode. Paths are relative to albume-absolventi.html.
   // ---------------------------------------------------------------------------
   var PLACEHOLDER_GALLERY = [
-    { src: "assets/images/optimized/portfolio-curated/babeni-01.webp", width: 2200, height: 3300, alt: "Portret absolvent — placeholder" },
-    { src: "assets/images/optimized/portfolio-curated/babeni-02.webp", width: 2200, height: 1466, alt: "Landscape — placeholder" },
-    { src: "assets/images/optimized/portfolio-curated/babeni-03.webp", width: 2200, height: 3300, alt: "Portret absolvent — placeholder" },
-    { src: "assets/images/optimized/portfolio-curated/babeni-05.webp", width: 2200, height: 1466, alt: "Landscape — placeholder" },
-    { src: "assets/images/optimized/portfolio-curated/ip-camera-01.webp", width: 2200, height: 3300, alt: "Portret absolvent — placeholder" },
-    { src: "assets/images/optimized/portfolio-curated/ip-camera-02.webp", width: 2200, height: 1466, alt: "Landscape — placeholder" },
-    { src: "assets/images/optimized/portfolio-curated/ip-portrait-01.webp", width: 2200, height: 3300, alt: "Portret absolvent — placeholder" },
-    { src: "assets/images/optimized/portfolio-curated/ip-edit-02.webp", width: 2200, height: 1466, alt: "Landscape — placeholder" },
-    { src: "assets/images/optimized/portfolio-curated/letca-02.webp", width: 2200, height: 3300, alt: "Portret absolvent — placeholder" },
-    { src: "assets/images/optimized/portfolio-curated/letca-01.webp", width: 2200, height: 1466, alt: "Landscape — placeholder" },
-    { src: "assets/images/optimized/portfolio-curated/rus-01.webp", width: 2200, height: 3300, alt: "Portret absolvent — placeholder" },
-    { src: "assets/images/optimized/portfolio-curated/rus-04.webp", width: 2200, height: 1466, alt: "Landscape — placeholder" },
-    { src: "assets/images/optimized/portfolio-curated/wedding-01.webp", width: 2200, height: 1466, alt: "Landscape — placeholder" },
-    { src: "assets/images/optimized/galleries/david-esra.webp", width: 2000, height: 2666, alt: "Portret cuplu — placeholder" },
-    { src: "assets/images/optimized/galleries/vlad-denisa.webp", width: 2000, height: 2666, alt: "Portret cuplu — placeholder" },
-    { src: "assets/images/optimized/galleries/weddings_extra.webp", width: 2000, height: 1334, alt: "Landscape — placeholder" }
+    { src: "assets/images/optimized/portfolio-curated/babeni-01.webp", width: 2200, height: 3300, alt: "Portret DYO" },
+    { src: "assets/images/optimized/portfolio-curated/babeni-02.webp", width: 2200, height: 1466, alt: "Cadru peisaj DYO" },
+    { src: "assets/images/optimized/portfolio-curated/babeni-03.webp", width: 2200, height: 3300, alt: "Portret DYO" },
+    { src: "assets/images/optimized/portfolio-curated/babeni-05.webp", width: 2200, height: 1466, alt: "Cadru peisaj DYO" },
+    { src: "assets/images/optimized/portfolio-curated/ip-camera-01.webp", width: 2200, height: 3300, alt: "Portret DYO" },
+    { src: "assets/images/optimized/portfolio-curated/ip-camera-02.webp", width: 2200, height: 1466, alt: "Cadru peisaj DYO" },
+    { src: "assets/images/optimized/portfolio-curated/ip-portrait-01.webp", width: 2200, height: 3300, alt: "Portret DYO" },
+    { src: "assets/images/optimized/portfolio-curated/ip-edit-02.webp", width: 2200, height: 1466, alt: "Cadru peisaj DYO" },
+    { src: "assets/images/optimized/portfolio-curated/letca-02.webp", width: 2200, height: 3300, alt: "Portret DYO" },
+    { src: "assets/images/optimized/portfolio-curated/letca-01.webp", width: 2200, height: 1466, alt: "Cadru peisaj DYO" },
+    { src: "assets/images/optimized/portfolio-curated/rus-01.webp", width: 2200, height: 3300, alt: "Portret DYO" },
+    { src: "assets/images/optimized/portfolio-curated/rus-04.webp", width: 2200, height: 1466, alt: "Cadru peisaj DYO" },
+    { src: "assets/images/optimized/portfolio-curated/wedding-01.webp", width: 2200, height: 1466, alt: "Cadru peisaj DYO" },
+    { src: "assets/images/optimized/galleries/david-esra.webp", width: 2000, height: 2666, alt: "Portret DYO" },
+    { src: "assets/images/optimized/galleries/vlad-denisa.webp", width: 2000, height: 2666, alt: "Portret DYO" },
+    { src: "assets/images/optimized/galleries/weddings_extra.webp", width: 2000, height: 1334, alt: "Cadru peisaj DYO" }
   ];
 
   function shuffle(arr) {
@@ -50,6 +51,11 @@
     this.maxRowHeight = (options && options.maxRowHeight) || 320;
     this._ro = null;
   }
+
+  JustifiedGallery.prototype.setItems = function (items) {
+    this.items = items;
+    this.render();
+  };
 
   JustifiedGallery.prototype.render = function () {
     var width = Math.floor(this.el.clientWidth || this.el.getBoundingClientRect().width);
@@ -127,7 +133,6 @@
     }
 
     if (pending.length) {
-      // Last row: keep closer to target height, left-aligned feel via shorter row
       var gapsLast = gap * Math.max(0, pending.length - 1);
       var hLast = Math.min(target, (containerWidth - gapsLast) / aspectSum);
       rows.push({ items: pending, height: Math.floor(hLast) });
@@ -167,8 +172,6 @@
 
     var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    // When a letter is mid-viewport on the way down, highlight matching package.
-    // Also observe package cards: when a package enters view, light up its letter.
     if ("IntersectionObserver" in window && !reduce) {
       var letterObserver = new IntersectionObserver(
         function (entries) {
@@ -181,7 +184,6 @@
               card.classList.add("is-highlight");
             } else {
               entry.target.classList.remove("is-active");
-              // Keep highlight if the package itself is in view
               if (!card.classList.contains("is-inview")) {
                 card.classList.remove("is-highlight");
               }
@@ -205,12 +207,8 @@
               if (letter) letter.classList.add("is-active");
             } else {
               entry.target.classList.remove("is-inview");
-              // Only clear highlight if letter isn't driving it
               if (!letter || !letter.classList.contains("is-active")) {
                 entry.target.classList.remove("is-highlight");
-              }
-              if (letter && !entry.isIntersecting) {
-                // leave letter state to letterObserver
               }
             }
           });
@@ -223,7 +221,6 @@
       });
     }
 
-    // Subtle parallax on the big letters while hero is visible (cheap rAF)
     var hero = document.querySelector(".offer-hero");
     var letterWrap = document.querySelector(".offer-hero-letters");
     if (hero && letterWrap && !reduce) {
@@ -256,24 +253,134 @@
     onScroll();
   }
 
-  function initGallery() {
-    var mount = document.getElementById("offer-gallery");
-    if (!mount) return;
-    // Verify portrait dims for galleries that may differ; measure if needed later.
-    var items = shuffle(PLACEHOLDER_GALLERY);
-    // Measure any unknown dims on load (optional safety)
-    var gallery = new JustifiedGallery(mount, items, {
+  // ---- Gallery + reshuffle ----------------------------------------------------
+
+  var galleryInstance = null;
+
+  function galleryOptions() {
+    return {
       targetRowHeight: window.innerWidth < 640 ? 160 : 220,
       gap: 8,
       maxRowHeight: 280
+    };
+  }
+
+  function reshuffleGallery() {
+    if (!galleryInstance) return;
+    galleryInstance.setItems(shuffle(PLACEHOLDER_GALLERY));
+  }
+
+  function initGallery() {
+    var mount = document.getElementById("offer-gallery");
+    if (!mount) return;
+    var items = shuffle(PLACEHOLDER_GALLERY);
+    galleryInstance = new JustifiedGallery(mount, items, galleryOptions());
+    galleryInstance.mount();
+
+    var refreshBtn = document.getElementById("gallery-refresh");
+    if (refreshBtn) {
+      refreshBtn.addEventListener("click", function () {
+        reshuffleGallery();
+      });
+    }
+  }
+
+  // Expose for optional external use / debugging
+  window.DYOOfferGallery = {
+    reshuffle: reshuffleGallery
+  };
+
+  // ---- Inquiry modal ----------------------------------------------------------
+
+  function buildInquiryMessage(data) {
+    var lines = [
+      "Bună DYO! Sunt interesat(ă) de albumele pentru Promoția 2027.",
+      "",
+      "Școală / liceu: " + data.school,
+      "Clasă: " + data.className,
+      "Număr elevi: " + data.students
+    ];
+    if (data.name) lines.push("Nume: " + data.name);
+    if (data.phone) lines.push("Telefon: " + data.phone);
+    return lines.join("\n");
+  }
+
+  function collectInquiry(form) {
+    var fd = new FormData(form);
+    return {
+      school: String(fd.get("school") || "").trim(),
+      className: String(fd.get("class") || "").trim(),
+      students: String(fd.get("students") || "").trim(),
+      name: String(fd.get("name") || "").trim(),
+      phone: String(fd.get("phone") || "").trim()
+    };
+  }
+
+  function initInquiryModal() {
+    var modal = document.getElementById("inquiry-modal");
+    var openBtn = document.getElementById("inquiry-open");
+    var form = document.getElementById("inquiry-form");
+    if (!modal || !openBtn || !form) return;
+
+    var closeEls = modal.querySelectorAll("[data-inquiry-close]");
+    var lastFocus = null;
+
+    function openModal() {
+      lastFocus = document.activeElement;
+      modal.hidden = false;
+      document.body.classList.add("modal-open");
+      var first = form.querySelector("input");
+      if (first) first.focus();
+    }
+
+    function closeModal() {
+      modal.hidden = true;
+      document.body.classList.remove("modal-open");
+      if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
+    }
+
+    openBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      openModal();
     });
-    gallery.mount();
+
+    closeEls.forEach(function (el) {
+      el.addEventListener("click", closeModal);
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !modal.hidden) closeModal();
+    });
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var actionBtn = e.submitter || form.querySelector("[data-action]");
+      var action = (actionBtn && actionBtn.getAttribute("data-action")) || "whatsapp";
+      var data = collectInquiry(form);
+
+      if (!data.school || !data.className || !data.students) {
+        form.reportValidity();
+        return;
+      }
+
+      var message = buildInquiryMessage(data);
+
+      if (action === "email") {
+        var subject = encodeURIComponent("Promoția 2027 — " + data.school + " · " + data.className);
+        var body = encodeURIComponent(message);
+        window.location.href = "mailto:DYO.office@gmail.com?subject=" + subject + "&body=" + body;
+      } else {
+        var wa = "https://wa.me/40754241346?text=" + encodeURIComponent(message);
+        window.open(wa, "_blank", "noopener");
+      }
+    });
   }
 
   function boot() {
     initHeaderScroll();
     initGallery();
     initLetterPackageLink();
+    initInquiryModal();
   }
 
   if (document.readyState === "loading") {
