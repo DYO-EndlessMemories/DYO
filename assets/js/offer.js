@@ -1,4 +1,4 @@
-/**
+﻿/**
  * DYO — Albume Absolvenți (Promoția 2027)
  * Justified gallery + shuffle + scroll-linked D/Y/O → package highlight
  * + inquiry modal (WhatsApp / e-mail)
@@ -7,29 +7,8 @@
   "use strict";
 
   // ---------------------------------------------------------------------------
-  // TODO: replace PLACEHOLDER_GALLERY with real client / Promoția 2027 photos.
-  // Keep { src, width, height, alt } so the justified layout can size rows
-  // before images decode. Paths are relative to albume-absolventi.html.
-  // ---------------------------------------------------------------------------
-  var PLACEHOLDER_GALLERY = [
-    { src: "assets/images/optimized/portfolio-curated/babeni-01.webp", width: 2200, height: 3300, alt: "Portret DYO" },
-    { src: "assets/images/optimized/portfolio-curated/babeni-02.webp", width: 2200, height: 1466, alt: "Cadru peisaj DYO" },
-    { src: "assets/images/optimized/portfolio-curated/babeni-03.webp", width: 2200, height: 3300, alt: "Portret DYO" },
-    { src: "assets/images/optimized/portfolio-curated/babeni-05.webp", width: 2200, height: 1466, alt: "Cadru peisaj DYO" },
-    { src: "assets/images/optimized/portfolio-curated/ip-camera-01.webp", width: 2200, height: 3300, alt: "Portret DYO" },
-    { src: "assets/images/optimized/portfolio-curated/ip-camera-02.webp", width: 2200, height: 1466, alt: "Cadru peisaj DYO" },
-    { src: "assets/images/optimized/portfolio-curated/ip-portrait-01.webp", width: 2200, height: 3300, alt: "Portret DYO" },
-    { src: "assets/images/optimized/portfolio-curated/ip-edit-02.webp", width: 2200, height: 1466, alt: "Cadru peisaj DYO" },
-    { src: "assets/images/optimized/portfolio-curated/letca-02.webp", width: 2200, height: 3300, alt: "Portret DYO" },
-    { src: "assets/images/optimized/portfolio-curated/letca-01.webp", width: 2200, height: 1466, alt: "Cadru peisaj DYO" },
-    { src: "assets/images/optimized/portfolio-curated/rus-01.webp", width: 2200, height: 3300, alt: "Portret DYO" },
-    { src: "assets/images/optimized/portfolio-curated/rus-04.webp", width: 2200, height: 1466, alt: "Cadru peisaj DYO" },
-    { src: "assets/images/optimized/portfolio-curated/wedding-01.webp", width: 2200, height: 1466, alt: "Cadru peisaj DYO" },
-    { src: "assets/images/optimized/galleries/david-esra.webp", width: 2000, height: 2666, alt: "Portret DYO" },
-    { src: "assets/images/optimized/galleries/vlad-denisa.webp", width: 2000, height: 2666, alt: "Portret DYO" },
-    { src: "assets/images/optimized/galleries/weddings_extra.webp", width: 2000, height: 1334, alt: "Cadru peisaj DYO" }
-  ];
-
+  // Gallery images: loaded from offer-gallery/manifest.json (WebP from Ramase).
+  var OFFER_GALLERY = [];
   function shuffle(arr) {
     var a = arr.slice();
     for (var i = a.length - 1; i > 0; i--) {
@@ -267,22 +246,44 @@
 
   function reshuffleGallery() {
     if (!galleryInstance) return;
-    galleryInstance.setItems(shuffle(PLACEHOLDER_GALLERY));
+    galleryInstance.setItems(shuffle(OFFER_GALLERY));
+  }
+
+  function bindGalleryControls() {
+    var refreshBtn = document.getElementById("gallery-refresh");
+    if (refreshBtn && !refreshBtn.dataset.bound) {
+      refreshBtn.dataset.bound = "1";
+      refreshBtn.addEventListener("click", function () {
+        reshuffleGallery();
+      });
+    }
+  }
+
+  function mountGallery(items) {
+    var mount = document.getElementById("offer-gallery");
+    if (!mount) return;
+    OFFER_GALLERY = items || [];
+    galleryInstance = new JustifiedGallery(mount, shuffle(OFFER_GALLERY), galleryOptions());
+    galleryInstance.mount();
+    bindGalleryControls();
   }
 
   function initGallery() {
     var mount = document.getElementById("offer-gallery");
     if (!mount) return;
-    var items = shuffle(PLACEHOLDER_GALLERY);
-    galleryInstance = new JustifiedGallery(mount, items, galleryOptions());
-    galleryInstance.mount();
-
-    var refreshBtn = document.getElementById("gallery-refresh");
-    if (refreshBtn) {
-      refreshBtn.addEventListener("click", function () {
-        reshuffleGallery();
+    bindGalleryControls();
+    fetch("assets/images/optimized/offer-gallery/manifest.json")
+      .then(function (r) {
+        if (!r.ok) throw new Error("manifest " + r.status);
+        return r.json();
+      })
+      .then(function (items) {
+        mountGallery(items);
+      })
+      .catch(function (err) {
+        console.warn("DYO gallery manifest failed", err);
+        mount.innerHTML = "<p class=\"gallery-hint\">Galeria se încarcă în curând.</p>";
       });
-    }
   }
 
   // Expose for optional external use / debugging
