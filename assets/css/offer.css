@@ -1,8 +1,8 @@
 /* ============================================================
-   DYO — Albume Absolvenți (Promoția 2027) — page-specific styles
-   Fonts declared locally (style.css path omits the space in
-   "Agatho_ LightCAPS.otf"; we avoid importing the dark theme).
-   ============================================================ */
+    DYO — Albume Absolvenți (Promoția 2027) — page-specific styles
+    Fonts declared locally (style.css path omits the space in
+    "Agatho_ LightCAPS.otf"; we avoid importing the dark theme).
+    ============================================================ */
 
 @font-face {
   font-family: "Ms Claudy";
@@ -691,10 +691,21 @@ body.offer-page {
 }
 
 @media (max-width: 640px) {
+  .offer-gallery {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .offer-gallery .offer-inner--gallery {
+    max-width: none;
+    width: 100%;
+  }
+
   .masonry-gallery {
     column-count: 2;
     column-gap: 2px;
   }
+
   .masonry-item {
     margin-bottom: 2px;
   }
@@ -1000,20 +1011,24 @@ body.modal-open {
 .offer-modal-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
   margin-top: 8px;
 }
 
 .offer-modal-actions .btn-offer {
-  flex: 1 1 auto;
-  min-width: 120px;
+  flex: 1 1 180px;
 }
 
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .package-card,
-  .offer-letter,
-  .masonry-item img {
-    transition: none !important;
+@media (max-width: 480px) {
+  .offer-modal {
+    padding: 16px;
+  }
+
+  .offer-modal-panel {
+    width: 100%;
+    border-radius: 16px;
+    padding: 24px 18px 20px;
   }
 }
+
+/* End of stylesheet */
