@@ -604,9 +604,9 @@ body.offer-page {
   background: var(--sunlit-veil);
 }
 
-.offer-gallery .offer-inner {
-  overflow: hidden;
-  max-width: min(var(--offer-max), 100%);
+.offer-gallery .offer-inner--gallery {
+  max-width: min(1320px, 100%);
+  overflow: visible;
 }
 
 .gallery-heading-row {
@@ -651,45 +651,53 @@ body.offer-page {
   line-height: 1;
 }
 
-.justified-gallery {
-  margin-top: 28px;
+/* Masonry puzzle layout (CSS columns) — tight like portfolio walls */
+.masonry-gallery {
+  margin-top: 22px;
   width: 100%;
-  max-width: 100%;
-  overflow: hidden;
+  column-count: 4;
+  column-gap: 4px;
 }
 
-.justified-row {
-  display: flex;
-  width: 100%;
-  max-width: 100%;
-  margin: 0 0 8px;
-  gap: 8px;
-  overflow: hidden;
-}
-
-.justified-row:last-child {
-  margin-bottom: 0;
-}
-
-.justified-item {
-  position: relative;
-  overflow: hidden;
-  border-radius: 10px;
+.masonry-item {
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  page-break-inside: avoid;
+  margin: 0 0 4px;
   background: var(--luxe-oat);
-  flex: 0 0 auto;
-  height: var(--row-h, 220px);
-  /* width set inline by offer.js to avoid row overflow from rounding */
+  overflow: hidden;
 }
 
-.justified-item img {
+.masonry-item img {
+  display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.6s ease;
+  height: auto;
+  vertical-align: middle;
+  transition: transform 0.45s ease, opacity 0.3s ease;
 }
 
-.justified-item:hover img {
-  transform: scale(1.04);
+.masonry-item:hover img {
+  transform: scale(1.02);
+}
+
+@media (max-width: 980px) {
+  .masonry-gallery {
+    column-count: 3;
+    column-gap: 3px;
+  }
+  .masonry-item {
+    margin-bottom: 3px;
+  }
+}
+
+@media (max-width: 640px) {
+  .masonry-gallery {
+    column-count: 2;
+    column-gap: 2px;
+  }
+  .masonry-item {
+    margin-bottom: 2px;
+  }
 }
 
 .gallery-hint {
@@ -1005,7 +1013,7 @@ body.modal-open {
 @media (prefers-reduced-motion: reduce) {
   .package-card,
   .offer-letter,
-  .justified-item img {
+  .masonry-item img {
     transition: none !important;
   }
 }
