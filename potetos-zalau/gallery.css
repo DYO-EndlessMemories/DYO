@@ -38,9 +38,11 @@ button { color: inherit; font: inherit; cursor: pointer; }
 .shell { width: min(1320px, calc(100% - clamp(32px, 8vw, 120px))); margin-inline: auto; }
 .site-header { background: #0a0807; color: #fff; }
 .bar { display: flex; min-height: 70px; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid #ffffff26; }
-.brand { display: inline-flex; align-items: baseline; gap: 9px; }
+.brand { display: inline-flex; align-items: center; flex: 0 0 auto; gap: 7px; }
+.brand-text { display: flex; align-items: baseline; gap: 9px; }
+.dyo-mark { display: block; flex: 0 0 auto; object-fit: contain; }
 .brand strong { font: 700 1.2rem Georgia, serif; letter-spacing: .06em; }
-.brand span, .bar nav { font-size: .875rem; color: #f5f1e9; }
+.brand-name, .bar nav { font-size: .875rem; color: #f5f1e9; }
 .bar nav { display: flex; flex-wrap: wrap; justify-content: end; gap: 4px 24px; }
 .bar nav a[href="#nou"] { color: var(--accent); font-weight: 700; }
 .bar nav a:hover { text-decoration: underline; text-underline-offset: .25em; }
@@ -120,7 +122,11 @@ h2 { font-size: clamp(2.25rem, 4vw, 3.5rem); line-height: 1.12; }
 
 .video-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); gap: 20px; }
 video { display: block; width: 100%; max-height: 70vh; background: #161514; }
-.footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px 18px; margin-top: 52px; padding-block: 20px 28px; border-top: 1px solid var(--line); color: var(--muted); font-size: .875rem; }
+.footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 18px; margin-top: 52px; padding-block: 20px 28px; border-top: 1px solid var(--line); color: var(--muted); font-size: .875rem; }
+
+.footer-credit { display: inline-flex; align-items: center; gap: 8px; }
+.footer-credit .dyo-mark { padding: 3px; border-radius: 7px; background: #211d17; }
+.footer-credit:hover span { text-decoration: underline; text-underline-offset: .2em; }
 
 #lightbox {
   position: fixed;
@@ -204,7 +210,7 @@ video { display: block; width: 100%; max-height: 70vh; background: #161514; }
   :root { --gap: 6px; }
   .bar { min-height: 56px; }
   .bar nav { gap: 4px 12px; }
-  .brand { flex-direction: column; align-items: start; gap: 1px; }
+  .brand-text { flex-direction: column; align-items: start; gap: 1px; }
   .intro-inner { grid-template-columns: 1fr; }
   .intro-copy { padding: 24px 20px 2px; }
   .intro-copy::before { background-size: auto 95%; background-position: 95% 50%; }
@@ -313,7 +319,7 @@ video { display: block; width: 100%; max-height: 70vh; background: #161514; }
 }
 @media (max-width: 360px) {
   .bar nav { gap: 4px 9px; }
-  .brand span { display: none; }
+  .brand-name { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
