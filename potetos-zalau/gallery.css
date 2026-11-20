@@ -285,9 +285,23 @@ video { display: block; width: 100%; max-height: 70vh; background: #161514; }
 .zip-help summary { cursor: pointer; font-weight: 700; }
 .zip-help p { margin: 8px 0 0; }
 .download-files { list-style: none; padding: 0; margin: 14px 0 0; }
-.download-files li { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 8px; }
+.download-files li { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .download-files li + li { border-top: 1px solid #ded7ca; }
-.download-files a { display: block; padding: 10px 0; overflow-wrap: anywhere; text-decoration: underline; text-underline-offset: 3px; }
+.download-photo-view {
+  display: flex;
+  flex: 1;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.download-photo-view:hover { text-decoration: underline; text-underline-offset: 3px; }
+.download-photo-view img { flex: 0 0 auto; width: 42px; height: 42px; object-fit: cover; border-radius: 4px; background: #e9e4d8; }
+.download-photo-view strong { font-weight: 500; }
 .download-files span { color: var(--muted); font-size: .75rem; }
 
 @media (prefers-reduced-motion: reduce) {

@@ -86,9 +86,7 @@ function photoFile(card) {
   return { href, name };
 }
 
-function favoriteFiles() {
-  return [...collections.values()].flatMap(collection => collection.files).filter(file => favorites.has(file.href));
-}
+
 
 function addPhotoActions(card) {
   const original = card.dataset.original;
@@ -345,14 +343,16 @@ function applyJustified(cards, aspectRatios, width, gap) {
   if (rowStart < cards.length) finishRow(cards.length, preferredHeight, false);
 }
 
+function openLightbox(groupCards, title, index) {
+  cards = groupCards;
+  activeTitle = title;
+  dialog.showModal();
+  showPhoto(index);
+  document.querySelector("#close").focus();
+}
+
 function bindPhoto(card, groupCards, title, index) {
-  card.querySelector(".view").addEventListener("click", () => {
-    cards = groupCards;
-    activeTitle = title;
-    dialog.showModal();
-    showPhoto(index);
-    document.querySelector("#close").focus();
-  });
+  card.querySelector(".view").addEventListener("click", () => openLightbox(groupCards, title, index));
 }
 
 function setupGallery(section) {
@@ -486,7 +486,11 @@ function setDownloadLink(link, file) {
   link.download = file.name;
 }
 
-function dispatchDownload(link) {
+function dispatchDownload(file) {
+  const link = document.createElement("a");
+  setDownloadLink(link, file);
+  link.hidden = true;
+  document.body.append(link);
   if (link.origin !== location.origin) {
     // Each external attachment needs its own navigation while the server responds.
     if (!downloadFrames.has(link.href)) {
@@ -499,20 +503,23 @@ function dispatchDownload(link) {
     link.target = downloadFrames.get(link.href).name;
   }
   link.click();
-  link.removeAttribute("target");
+  link.remove();
 }
 
 downloadBatch.addEventListener("click", () => {
   const rows = [...downloadFiles.children];
-  const batchSize = rows.length;
+  const files = activeDownloads;
+  const batchSize = files.length;
+  if (!batchSize) return;
   downloadBatch.disabled = true;
   for (const row of rows) row.lastElementChild.textContent = "În coadă";
   let next = 0;
 
   function dispatchNext() {
     if (!downloadDialog.open) return;
-    const row = rows[next++];
-    if (row.lastElementChild.textContent === "În coadă") dispatchDownload(row.firstElementChild);
+    dispatchDownload(files[next]);
+    rows[next].lastElementChild.textContent = "Trimis browserului";
+    next++;
     if (next < batchSize) {
       if (next === 1 || next % 20 === 0) downloadStatus.textContent = `${next} din ${batchSize} trimise browserului.`;
       batchTimer = setTimeout(dispatchNext, 150);
@@ -528,11 +535,12 @@ downloadDialog.addEventListener("close", () => clearTimeout(batchTimer));
 downloadPhotos.addEventListener("click", () => openPhotos(activeDownloads));
 
 async function openDownloads(key) {
-  const all = [...collections.values()].flatMap(collection => collection.files);
-  const collection = key === "all" ? { title: "Toate galeriile", files: all }
-    : key === "favorites" ? { title: "Favorite", files: favoriteFiles() }
+  const allCards = [...collections.values()].flatMap(collection => collection.cards);
+  const collection = key === "all" ? { title: "Toate galeriile", cards: allCards }
+    : key === "favorites" ? { title: "Favorite", cards: allCards.filter(card => favorites.has(card.dataset.original)) }
     : collections.get(key);
-  activeDownloads = collection.files;
+  const groupCards = collection.cards;
+  activeDownloads = groupCards.map(photoFile);
   downloadTitle.textContent = collection.title;
   downloadCount.textContent = activeDownloads.length
     ? activeDownloads.length === 1 ? "1 fișier în format original" : `${activeDownloads.length} fișiere în format original`
@@ -554,14 +562,20 @@ async function openDownloads(key) {
   downloadBatch.disabled = false;
   downloadBatch.textContent = activeDownloads.every(file => /\.jpe?g$/i.test(file.name))
     ? "Descarcă toate JPG-urile" : "Descarcă toate separat";
-  downloadFiles.replaceChildren(...activeDownloads.map(file => {
+  downloadFiles.replaceChildren(...activeDownloads.map((file, index) => {
     const item = document.createElement("li");
-    const link = document.createElement("a");
-    setDownloadLink(link, file);
-    link.textContent = file.name;
-    const status = document.createElement("span");
-    link.addEventListener("click", () => { status.textContent = "Trimis browserului"; });
-    item.append(link, status);
+    const view = document.createElement("button");
+    view.type = "button";
+    view.className = "download-photo-view";
+    const thumb = document.createElement("img");
+    thumb.src = groupCards[index].querySelector("img").src;
+    thumb.alt = "";
+    thumb.loading = "lazy";
+    const name = document.createElement("strong");
+    name.textContent = file.name;
+    view.append(thumb, name);
+    view.addEventListener("click", () => openLightbox(groupCards, collection.title, index));
+    item.append(view, document.createElement("span"));
     return item;
   }));
   downloadDialog.showModal();
@@ -591,6 +605,7 @@ const photoProgress = document.querySelector("#save-photos-progress");
 const originalPhoto = document.querySelector("#save-photos-original");
 const originalDownload = document.querySelector("#save-photos-download");
 const sharePhotos = document.querySelector("#save-photos-share");
+const previousPhotos = document.querySelector("#save-photos-previous");
 const nextPhotos = document.querySelector("#save-photos-next");
 const showOriginal = document.querySelector("#save-photos-show-original");
 // Limit the amount of original image data handed to the browser at once.
@@ -700,7 +715,7 @@ function openPhotos(files) {
       groups.push({ files: files.slice(start, start + shareFileLimit), share: true });
     }
   }
-  photoSession = { groups, total: files.length, index: 0, offset: 0, controller: new AbortController() };
+  photoSession = { groups, total: files.length, index: 0 };
   document.querySelector("#save-photos-title").textContent = usesIOS ? "Salvează în Poze" : "Partajează fotografiile";
   photosDialog.showModal();
   preparePhotos(photoSession);
@@ -746,14 +761,18 @@ async function readOriginal(file, signal) {
 
 function renderPhotoProgress(session) {
   const count = session.groups[session.index].files.length;
-  const first = session.offset + 1;
-  const last = session.offset + count;
+  const first = 1 + session.groups.slice(0, session.index).reduce((total, group) => total + group.files.length, 0);
+  const last = first + count - 1;
   const range = count === 1 ? first : first + "–" + last;
   photoProgress.textContent = session.total === 1 ? "" : range + " din " + session.total + " fotografii";
+  previousPhotos.hidden = session.index === 0;
   nextPhotos.hidden = session.index + 1 >= session.groups.length;
 }
 
 async function preparePhotos(session) {
+  session.controller?.abort();
+  const controller = new AbortController();
+  session.controller = controller;
   resetPhotoPanel();
   session.ready = null;
   const { files, share } = session.groups[session.index];
@@ -771,11 +790,12 @@ async function preparePhotos(session) {
   let size = 0;
   let remaining = [];
   for (const [index, file] of files.entries()) {
-    if (session.controller.signal.aborted) return;
+    if (controller.signal.aborted) return;
     try {
-      const original = session.deferred?.href === file.href
-        ? session.deferred.original : await readOriginal(file, session.controller.signal);
-      session.deferred = null;
+      const cached = session.deferred?.href === file.href ? session.deferred : null;
+      const original = cached?.original || await readOriginal(file, controller.signal);
+      if (controller.signal.aborted) return;
+      if (cached) session.deferred = null;
       if (originals.length && size + original.size > shareByteBudget) {
         session.deferred = { href: file.href, original };
         remaining = files.slice(index);
@@ -788,7 +808,7 @@ async function preparePhotos(session) {
       failed.push(file);
     }
   }
-  if (photoSession !== session || !photosDialog.open) return;
+  if (controller.signal.aborted || photoSession !== session || !photosDialog.open) return;
 
   const followUp = remaining.length ? [{ files: remaining, share: true }] : [];
   const payload = { files: originals };
@@ -817,7 +837,7 @@ async function sharePreparedPhotos() {
   const session = photoSession;
   const payload = session?.ready;
   if (!payload || sharePhotos.disabled) return;
-  sharePhotos.disabled = nextPhotos.disabled = showOriginal.disabled = true;
+  sharePhotos.disabled = previousPhotos.disabled = nextPhotos.disabled = showOriginal.disabled = true;
   try {
     await navigator.share(payload);
   } catch (error) {
@@ -826,7 +846,7 @@ async function sharePreparedPhotos() {
       showOriginal.hidden = false;
     }
   } finally {
-    sharePhotos.disabled = nextPhotos.disabled = showOriginal.disabled = false;
+    sharePhotos.disabled = previousPhotos.disabled = nextPhotos.disabled = showOriginal.disabled = false;
   }
 }
 
@@ -838,16 +858,18 @@ showOriginal.addEventListener("click", () => {
   session.groups.splice(session.index, 1, ...individualPhotoGroups(files));
   preparePhotos(session);
 });
-nextPhotos.addEventListener("click", () => {
+function movePhotoBatch(direction, button) {
   const session = photoSession;
-  if (!session || nextPhotos.hidden) return;
-  session.offset += session.groups[session.index].files.length;
-  session.index++;
+  if (!session || button.hidden || button.disabled) return;
+  session.index += direction;
   preparePhotos(session);
-});
+}
+
+previousPhotos.addEventListener("click", () => movePhotoBatch(-1, previousPhotos));
+nextPhotos.addEventListener("click", () => movePhotoBatch(1, nextPhotos));
 photosDialog.addEventListener("close", () => {
   if (photosDialog.open) return;
-  photoSession?.controller.abort();
+  photoSession?.controller?.abort();
   photoSession = null;
   resetPhotoPanel();
 });
@@ -919,8 +941,7 @@ if (usesIOS && hasNativePhotoShare()) {
 for (const section of document.querySelectorAll(".gallery-section")) {
   if (["fotografii", "gta-vi", "gta-afise"].includes(section.id)) {
     const galleryCards = [...section.querySelectorAll(".photo")];
-    const files = galleryCards.map(photoFile);
-    collections.set(section.id, { title: section.querySelector("h2").textContent, files, cards: galleryCards });
+    collections.set(section.id, { title: section.querySelector("h2").textContent, cards: galleryCards });
     const actions = document.createElement("div");
     actions.className = "section-actions";
     section.querySelector(".section-head").append(actions);
