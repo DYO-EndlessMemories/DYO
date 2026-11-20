@@ -81,7 +81,7 @@ function toggleFavorite(key) {
 function photoFile(card) {
   const href = card.dataset.original;
   const name = card.dataset.filename || decodeURIComponent(new URL(href, document.baseURI).pathname.split("/").pop());
-  return { href, name, preview: card.querySelector("img").src };
+  return { href, name };
 }
 
 function favoriteFiles() {
@@ -527,7 +527,7 @@ async function openDownloads(key) {
   downloadPhotos.hidden = !usesIOS || !hasFiles;
   if (usesIOS) {
     downloadPhotosHelp.textContent = hasNativePhotoShare()
-      ? "Salvezi în loturi din meniul iPhone-ului. Imaginile din GitHub Releases se salvează la rezoluția galeriei. Alege ZIP pentru toate originalele."
+      ? "Salvează fotografiile originale în loturi din meniul iPhone-ului."
       : "Poți deschide și salva fotografiile pe rând.";
   }
   downloadPhotosHelp.hidden = downloadPhotos.hidden;
@@ -575,18 +575,22 @@ const originalDownload = document.querySelector("#save-photos-download");
 const sharePhotos = document.querySelector("#save-photos-share");
 const nextPhotos = document.querySelector("#save-photos-next");
 const showOriginal = document.querySelector("#save-photos-show-original");
-const shareBatchSize = 8;
+const shareBatchSize = 4;
+const originalRelease = "https://github.com/DYO-EndlessMemories/DYO/releases/download/potetos-zalau-materiale/";
+const originalMedia = "https://raw.githubusercontent.com/DYO-EndlessMemories/DYO/ddac8dc0fb401b00941dbacaf065b37e2bbf5343/";
 let photoSession;
 
-function releaseAttachment(file) {
-  const url = new URL(file.href, document.baseURI);
-  return url.hostname === "github.com" && url.pathname.includes("/releases/download/");
+function originalShareUrl(file) {
+  if (file.href.startsWith(originalRelease)) {
+    return originalMedia + file.href.slice(originalRelease.length);
+  }
+  return file.href;
 }
 
 function openSinglePhoto(event, file) {
   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
   event.preventDefault();
-  openPhotos([file]);
+  openPhotos([file], true);
 }
 
 function individualPhotoGroups(files) {
@@ -597,7 +601,7 @@ function hasNativePhotoShare() {
   return typeof navigator.share === "function" && typeof navigator.canShare === "function";
 }
 
-function openPhotos(files) {
+async function openPhotos(files, shareOnReady = false) {
   if (!files.length || photosDialog.open) return;
   const nativeShare = hasNativePhotoShare();
   const groups = nativeShare ? [] : individualPhotoGroups(files);
@@ -608,7 +612,11 @@ function openPhotos(files) {
   }
   photoSession = { groups, total: files.length, index: 0, offset: 0, controller: new AbortController() };
   photosDialog.showModal();
-  preparePhotos(photoSession);
+  const session = photoSession;
+  await preparePhotos(session);
+  if (shareOnReady && photoSession === session && photosDialog.open && navigator.userActivation?.isActive) {
+    sharePreparedPhotos();
+  }
 }
 
 function resetPhotoPanel() {
@@ -633,33 +641,20 @@ function showFullPhoto(file) {
   originalPhoto.onerror = () => {
     photoStatus.textContent = "Originalul nu s-a afișat. Îl poți descărca și importa în Poze din Fișiere.";
   };
-  originalPhoto.src = file.href;
-}
-
-async function readGalleryPhoto(file, signal) {
-  const response = await fetch(file.preview, { signal });
-  if (!response.ok) throw new Error("Gallery image unavailable");
-  const bitmap = await createImageBitmap(await response.blob());
-  const canvas = document.createElement("canvas");
-  try {
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
-    canvas.getContext("2d").drawImage(bitmap, 0, 0);
-    const jpeg = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", .95));
-    if (!jpeg) throw new Error("Could not prepare gallery image");
-    return new File([jpeg], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" });
-  } finally {
-    bitmap.close();
-    canvas.width = canvas.height = 1;
-  }
+  originalPhoto.src = originalShareUrl(file);
 }
 
 async function readOriginal(file, signal) {
-  const response = await fetch(file.href, { signal });
+  const response = await fetch(originalShareUrl(file), { signal });
   if (!response.ok) throw new Error("Original unavailable");
   const blob = await response.blob();
-  if (!blob.size || !blob.type.startsWith("image/")) throw new Error("Invalid image response");
-  return new File([blob], file.name, { type: blob.type });
+  const extension = file.name.split(".").pop().toLowerCase();
+  const types = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp" };
+  const type = blob.type.startsWith("image/") ? blob.type : types[extension];
+  if (!blob.size || !type || (blob.type && blob.type !== "application/octet-stream" && !blob.type.startsWith("image/"))) {
+    throw new Error("Invalid image response");
+  }
+  return new File([blob], file.name, { type });
 }
 
 function renderPhotoProgress(session) {
@@ -682,12 +677,12 @@ async function preparePhotos(session) {
   }
 
   nextPhotos.hidden = true;
-  photoStatus.textContent = files.length === 1 ? "Se pregătește fotografia…" : "Se pregătesc fotografiile…";
+  photoStatus.textContent = files.length === 1 ? "Se încarcă fotografia originală…" : "Se încarcă fotografiile originale…";
   const results = [];
   for (let start = 0; start < files.length; start += 2) {
     if (session.controller.signal.aborted) return;
     results.push(...await Promise.allSettled(files.slice(start, start + 2).map(file =>
-      (releaseAttachment(file) ? readGalleryPhoto : readOriginal)(file, session.controller.signal)
+      readOriginal(file, session.controller.signal)
     )));
   }
   if (photoSession !== session || !photosDialog.open) return;
@@ -717,27 +712,28 @@ async function preparePhotos(session) {
   photoStatus.textContent = originals.length === 1 ?
     "Alege „Salvează imaginea” din meniul iPhone-ului." :
     "Alege „Salvează imaginile” din meniul iPhone-ului, apoi continuă cu următoarele fotografii.";
-  if (loaded.some(releaseAttachment)) {
-    photoStatus.textContent += " Sunt incluse imagini la rezoluția galeriei.";
-  }
   showOriginal.textContent = originals.length === 1 ? "Deschide originalul" : "Deschide originalele pe rând";
-  showOriginal.hidden = false;
   renderPhotoProgress(session);
 }
 
-sharePhotos.addEventListener("click", async () => {
+async function sharePreparedPhotos() {
   const session = photoSession;
   const payload = session?.ready;
-  if (!payload) return;
+  if (!payload || sharePhotos.disabled) return;
+  sharePhotos.disabled = nextPhotos.disabled = showOriginal.disabled = true;
   try {
     await navigator.share(payload);
   } catch (error) {
     if (error.name !== "AbortError" && photoSession === session && session.ready === payload && photosDialog.open) {
       photoStatus.textContent = "Meniul de salvare nu s-a deschis. Încearcă din nou sau deschide originalul.";
+      showOriginal.hidden = false;
     }
+  } finally {
+    sharePhotos.disabled = nextPhotos.disabled = showOriginal.disabled = false;
   }
-});
+}
 
+sharePhotos.addEventListener("click", sharePreparedPhotos);
 showOriginal.addEventListener("click", () => {
   const session = photoSession;
   if (!session?.ready) return;
@@ -781,7 +777,7 @@ if (usesIOS) {
     cancelPress();
     preventPreviewClick = true;
     gesture = null;
-    openPhotos([photoFile(card)]);
+    openPhotos([photoFile(card)], true);
   }
 
   document.addEventListener("pointerdown", event => {
