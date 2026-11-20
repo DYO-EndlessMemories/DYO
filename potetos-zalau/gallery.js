@@ -6,45 +6,124 @@ const position = document.querySelector("#position");
 const singleDownload = document.querySelector("#single-download");
 const stage = dialog.querySelector(".lightbox-stage");
 const filmstrip = document.querySelector("#filmstrip");
+const lightboxFavorite = document.querySelector("#lightbox-favorite");
 const mobileLayout = matchMedia("(max-width: 700px)");
 let current = 0;
 let gesture = null;
 let suppressClickUntil = 0;
+let filmstripCards;
+let filmstripTimer;
+
+const collections = new Map();
+const favoriteStorageKey = "potetos-zalau-favorites";
+const favoriteButtons = new Map();
+let favorites;
+try {
+  const saved = JSON.parse(localStorage.getItem(favoriteStorageKey));
+  favorites = new Set(Array.isArray(saved) ? saved : []);
+} catch {
+  favorites = new Set();
+}
+
+function renderFavorite(button, key) {
+  const selected = favorites.has(key);
+  button.setAttribute("aria-pressed", String(selected));
+  button.setAttribute("aria-label", selected ? "Scoate din favorite" : "Adaugă la favorite");
+  button.textContent = selected ? "♥" : "♡";
+}
+
+function updateFavoriteCount() {
+  document.querySelectorAll("[data-favorite-count]").forEach(element => {
+    element.textContent = favoriteFiles().length;
+  });
+}
+
+function toggleFavorite(key) {
+  if (favorites.has(key)) favorites.delete(key);
+  else favorites.add(key);
+  try {
+    localStorage.setItem(favoriteStorageKey, JSON.stringify([...favorites]));
+  } catch {
+    // Favorites still work for the current page when storage is unavailable.
+  }
+  for (const button of favoriteButtons.get(key) || []) renderFavorite(button, key);
+  if (dialog.open) renderFavorite(lightboxFavorite, cards[current].dataset.original);
+  updateFavoriteCount();
+}
+
+function photoFile(card) {
+  const href = card.dataset.original;
+  const name = card.dataset.filename || decodeURIComponent(new URL(href, document.baseURI).pathname.split("/").pop());
+  return { href, name };
+}
+
+function favoriteFiles() {
+  return [...collections.values()].flatMap(collection => collection.files).filter(file => favorites.has(file.href));
+}
+
+function addPhotoActions(card) {
+  const original = card.dataset.original;
+  const file = photoFile(card);
+  const actions = document.createElement("div");
+  actions.className = "photo-actions";
+  const download = document.createElement("a");
+  download.className = "photo-download";
+  download.href = file.href;
+  download.download = file.name;
+  download.textContent = "↓";
+  download.setAttribute("aria-label", `Descarcă ${file.name}`);
+  const favorite = document.createElement("button");
+  favorite.type = "button";
+  favorite.className = "favorite-toggle";
+  renderFavorite(favorite, original);
+  favorite.addEventListener("click", () => toggleFavorite(original));
+  if (!favoriteButtons.has(original)) favoriteButtons.set(original, []);
+  favoriteButtons.get(original).push(favorite);
+  actions.append(download, favorite);
+  card.append(actions);
+}
 
 function updateFilmstrip() {
-  if (!mobileLayout.matches) {
-    filmstrip.replaceChildren();
-    return;
-  }
-
-  const count = Math.min(cards.length, 7);
-  const start = Math.max(0, Math.min(current - Math.floor(count / 2), cards.length - count));
-  const focusInStrip = filmstrip.contains(document.activeElement);
-  const thumbnails = document.createDocumentFragment();
-  let selected;
-
-  for (let index = start; index < start + count; index++) {
-    const image = document.createElement("img");
-    image.src = cards[index].querySelector("img").src;
-    image.alt = "";
-
-    const button = document.createElement("button");
-    button.type = "button";
-    button.setAttribute("aria-label", `Fotografia ${index + 1}`);
-    if (index === current) {
-      button.setAttribute("aria-current", "true");
-      selected = button;
-    }
-    button.addEventListener("click", () => {
-      showPhoto(index);
-      filmstrip.querySelector('[aria-current="true"]').focus({ preventScroll: true });
+  if (filmstripCards !== cards) {
+    const thumbnails = cards.map((card, index) => {
+      const image = document.createElement("img");
+      image.src = card.querySelector("img").src;
+      image.loading = "lazy";
+      image.alt = "";
+      const button = document.createElement("button");
+      button.type = "button";
+      button.setAttribute("aria-label", `Fotografia ${index + 1}`);
+      button.addEventListener("click", () => showPhoto(index));
+      button.append(image);
+      return button;
     });
-    button.append(image);
-    thumbnails.append(button);
+    filmstrip.replaceChildren(...thumbnails);
+    filmstripCards = cards;
   }
-  filmstrip.replaceChildren(thumbnails);
-  if (focusInStrip) selected.focus({ preventScroll: true });
+  filmstrip.querySelector("[aria-current]")?.removeAttribute("aria-current");
+  const selected = filmstrip.children[current];
+  selected.setAttribute("aria-current", "true");
+  const left = selected.offsetLeft + (selected.offsetWidth - filmstrip.clientWidth) / 2;
+  if (Math.abs(filmstrip.scrollLeft - left) > 2) filmstrip.scrollLeft = left;
 }
+
+filmstrip.addEventListener("scroll", () => {
+  clearTimeout(filmstripTimer);
+  filmstripTimer = setTimeout(() => {
+    if (!dialog.open || !filmstrip.children.length) return;
+    const center = filmstrip.scrollLeft + filmstrip.clientWidth / 2;
+    let closest = current;
+    let distance = Infinity;
+    for (const [index, thumbnail] of [...filmstrip.children].entries()) {
+      const offset = Math.abs(thumbnail.offsetLeft + thumbnail.offsetWidth / 2 - center);
+      if (offset < distance) {
+        distance = offset;
+        closest = index;
+      }
+    }
+    if (closest !== current) showPhoto(closest);
+  }, 120);
+}, { passive: true });
 
 function showPhoto(index) {
   current = (index + cards.length) % cards.length;
@@ -54,8 +133,10 @@ function showPhoto(index) {
   position.textContent = `${current + 1} / ${cards.length}`;
   singleDownload.href = card.dataset.original;
   singleDownload.download = card.dataset.filename || "";
+  renderFavorite(lightboxFavorite, card.dataset.original);
   updateFilmstrip();
 }
+lightboxFavorite.addEventListener("click", () => toggleFavorite(cards[current].dataset.original));
 document.querySelector("#close").addEventListener("click", () => dialog.close());
 document.querySelector("#previous").addEventListener("click", () => showPhoto(current - 1));
 document.querySelector("#next").addEventListener("click", () => showPhoto(current + 1));
@@ -83,6 +164,7 @@ dialog.addEventListener("click", event => {
   if ((event.target === stage || event.target === dialog) && performance.now() > suppressClickUntil) dialog.close();
 });
 dialog.addEventListener("close", () => {
+  clearTimeout(filmstripTimer);
   gesture = null;
   suppressClickUntil = 0;
 });
@@ -174,14 +256,17 @@ function setupGallery(section) {
     card.querySelector(".view").addEventListener("click", () => {
       cards = groupCards;
       activeTitle = title;
-      showPhoto(index);
       dialog.showModal();
+      showPhoto(index);
       document.querySelector("#close").focus();
     });
   }
 
   groupCards.forEach(bindPhoto);
-  if (!grid) return;
+  if (!grid) {
+    groupCards.forEach(addPhotoActions);
+    return;
+  }
 
   let customPreview = false;
   if (sample && section.dataset.previewFrames) {
@@ -196,11 +281,13 @@ function setupGallery(section) {
       for (const { card, index } of selected) {
         const preview = card.cloneNode(true);
         bindPhoto(preview, index);
+        addPhotoActions(preview);
         sample.append(preview);
       }
       customPreview = true;
     }
   }
+  groupCards.forEach(addPhotoActions);
 
   const toggle = section.querySelector(".gallery-toggle");
   const collapse = section.querySelector(".collapse-gallery");
@@ -252,4 +339,100 @@ function setupGallery(section) {
   }
 }
 
-document.querySelectorAll(".gallery-section").forEach(setupGallery);
+const downloadDialog = document.querySelector("#downloads");
+const downloadTitle = document.querySelector("#downloads-title");
+const downloadCount = document.querySelector("#downloads-count");
+const downloadArchive = document.querySelector("#download-archive");
+const downloadNext = document.querySelector("#download-next");
+const downloadFiles = document.querySelector("#download-files");
+let archiveCatalog;
+let activeDownloads = [];
+let downloadIndex = 0;
+
+function setDownloadLink(link, file) {
+  link.href = file.href;
+  link.download = file.name;
+}
+
+function updateNextDownload() {
+  const file = activeDownloads[downloadIndex];
+  downloadNext.hidden = !file;
+  if (file) {
+    setDownloadLink(downloadNext, file);
+    downloadNext.textContent = `Descarcă separat ${downloadIndex + 1}/${activeDownloads.length}`;
+  }
+}
+
+downloadNext.addEventListener("click", () => {
+  downloadIndex++;
+  setTimeout(updateNextDownload, 0);
+});
+
+async function openDownloads(key) {
+  const all = [...collections.values()].flatMap(collection => collection.files);
+  const collection = key === "all" ? { title: "Toate galeriile", files: all }
+    : key === "favorites" ? { title: "Favorite", files: favoriteFiles() }
+    : collections.get(key);
+  activeDownloads = collection.files;
+  downloadIndex = 0;
+  downloadTitle.textContent = collection.title;
+  downloadCount.textContent = activeDownloads.length
+    ? activeDownloads.length === 1 ? "1 fișier în format original" : `${activeDownloads.length} fișiere în format original`
+    : "Apasă pe o inimă din galerie pentru a adăuga fotografii aici.";
+  downloadArchive.hidden = true;
+  updateNextDownload();
+  downloadFiles.replaceChildren(...activeDownloads.map(file => {
+    const item = document.createElement("li");
+    const link = document.createElement("a");
+    setDownloadLink(link, file);
+    link.textContent = file.name;
+    item.append(link);
+    return item;
+  }));
+  downloadDialog.showModal();
+
+  if (key === "favorites") return;
+  archiveCatalog ??= fetch("download-archives.json?v=1")
+    .then(response => response.ok ? response.json() : {})
+    .catch(() => ({}));
+  const requestFiles = activeDownloads;
+  const archive = (await archiveCatalog)[key];
+  if (activeDownloads !== requestFiles || !archive) return;
+  const originals = requestFiles.map(file => file.href).sort();
+  if (JSON.stringify(originals) === JSON.stringify([...archive.originals].sort())) {
+    downloadArchive.href = archive.url;
+    downloadArchive.hidden = false;
+  }
+}
+
+for (const section of document.querySelectorAll(".gallery-section")) {
+  if (["fotografii", "gta-vi", "gta-afise"].includes(section.id)) {
+    const files = [...section.querySelectorAll(".photo")].map(photoFile);
+    collections.set(section.id, { title: section.querySelector("h2").textContent, files });
+    const actions = document.createElement("div");
+    actions.className = "section-actions";
+    const toggle = section.querySelector(".gallery-toggle");
+    toggle.before(actions);
+    actions.append(toggle);
+    const download = document.createElement("button");
+    download.className = "button outline";
+    download.type = "button";
+    download.dataset.downloadSet = section.id;
+    download.textContent = "Descarcă tot";
+    actions.append(download);
+  }
+  setupGallery(section);
+}
+
+document.querySelectorAll("[data-download-set]").forEach(button => {
+  button.hidden = false;
+  button.addEventListener("click", () => openDownloads(button.dataset.downloadSet));
+});
+updateFavoriteCount();
+
+if ("IntersectionObserver" in window && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  const highlight = new IntersectionObserver(entries => {
+    for (const entry of entries) entry.target.classList.toggle("is-highlighted", entry.isIntersecting);
+  }, { rootMargin: "-18% 0px -22% 0px" });
+  document.querySelectorAll(".gallery-section .section-head").forEach(heading => highlight.observe(heading));
+}
