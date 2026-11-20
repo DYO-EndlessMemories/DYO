@@ -125,7 +125,7 @@ video { display: block; width: 100%; max-height: 70vh; background: #161514; }
 .footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 18px; margin-top: 52px; padding-block: 20px 28px; border-top: 1px solid var(--line); color: var(--muted); font-size: .875rem; }
 
 .footer-credit { display: inline-flex; align-items: center; gap: 8px; }
-.footer-credit .dyo-mark { padding: 3px; border-radius: 7px; background: #211d17; }
+.footer-credit .dyo-mark { border-radius: 7px; }
 .footer-credit:hover span { text-decoration: underline; text-underline-offset: .2em; }
 
 #lightbox {
