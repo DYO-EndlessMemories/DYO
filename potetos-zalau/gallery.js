@@ -99,10 +99,10 @@ function addPhotoActions(card) {
   download.className = "photo-download";
   download.href = file.href;
   download.download = file.name;
+  download.addEventListener("click", event => openSinglePhoto(event, file));
   if (usesIOS) {
     download.setAttribute("aria-label", `Salvează în Poze: ${file.name}`);
     download.title = "Salvează în Poze";
-    download.addEventListener("click", event => openSinglePhoto(event, file));
   } else {
     download.setAttribute("aria-label", `Descarcă ${file.name}`);
   }
@@ -471,7 +471,7 @@ const downloadDialog = document.querySelector("#downloads");
 const downloadTitle = document.querySelector("#downloads-title");
 const downloadCount = document.querySelector("#downloads-count");
 const downloadArchive = document.querySelector("#download-archive");
-const downloadFavoriteZip = document.querySelector("#download-favorite-zip");
+const prepareDownloadZip = document.querySelector("#prepare-download-zip");
 const downloadBatch = document.querySelector("#download-batch");
 const downloadPhotos = document.querySelector("#download-photos");
 const downloadPhotosHelp = document.querySelector("#download-photos-help");
@@ -479,102 +479,117 @@ const downloadFiles = document.querySelector("#download-files");
 const downloadHelp = document.querySelector("#download-help");
 const downloadStatus = document.querySelector("#download-status");
 const zipHelp = document.querySelector("#zip-help");
-const downloadFrames = new Map();
-let archiveCatalog;
 let activeDownloads = [];
-let batchTimer;
-let favoriteZipController;
-let favoriteZipUrl;
-let favoriteZipStarted = false;
+let batchController;
+let archiveFilename;
+let archiveCleanup;
+let fallbackPhotoUrl;
+let galleryZipController;
+let galleryZipUrl;
+let galleryZipStarted = false;
 
 function setDownloadLink(link, file) {
   link.href = file.href;
   link.download = file.name;
 }
 
-function dispatchDownload(file) {
+function dispatchDownload(photo) {
+  const url = URL.createObjectURL(photo);
   const link = document.createElement("a");
-  setDownloadLink(link, file);
+  setDownloadLink(link, { href: url, name: photo.name });
   link.hidden = true;
   document.body.append(link);
-  if (link.origin !== location.origin) {
-    // Each external attachment needs its own navigation while the server responds.
-    if (!downloadFrames.has(link.href)) {
-      const frame = document.createElement("iframe");
-      frame.name = `original-download-${downloadFrames.size}`;
-      frame.hidden = true;
-      document.body.append(frame);
-      downloadFrames.set(link.href, frame);
-    }
-    link.target = downloadFrames.get(link.href).name;
-  }
   link.click();
   link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
-downloadBatch.addEventListener("click", () => {
+downloadBatch.addEventListener("click", async () => {
   const rows = [...downloadFiles.children];
   const files = activeDownloads;
-  const batchSize = files.length;
-  if (!batchSize) return;
+  if (!files.length || batchController) return;
+  const controller = new AbortController();
+  batchController = controller;
+  const date = new Date();
   downloadBatch.disabled = true;
-  for (const row of rows) row.lastElementChild.textContent = "În coadă";
-  let next = 0;
-
-  function dispatchNext() {
-    if (!downloadDialog.open) return;
-    dispatchDownload(files[next]);
-    rows[next].lastElementChild.textContent = "Trimis browserului";
-    next++;
-    if (next < batchSize) {
-      if (next === 1 || next % 20 === 0) downloadStatus.textContent = `${next} din ${batchSize} trimise browserului.`;
-      batchTimer = setTimeout(dispatchNext, 150);
-    } else {
-      downloadStatus.textContent = `${batchSize} din ${batchSize} trimise browserului. Verifică finalizarea în lista de descărcări a browserului.`;
-      downloadBatch.disabled = false;
+  let sent = 0;
+  for (const [index, file] of files.entries()) {
+    if (controller.signal.aborted) return;
+    const status = rows[index].lastElementChild;
+    status.textContent = "Se pregătește";
+    try {
+      const original = await readDatedPhoto(file, controller.signal);
+      if (controller.signal.aborted) return;
+      dispatchDownload(original.stamp(date));
+      status.textContent = "Trimis browserului";
+      sent++;
+    } catch {
+      if (controller.signal.aborted) return;
+      status.textContent = "Nu s-a descărcat";
     }
+    downloadStatus.textContent = sent + " din " + files.length + " trimise browserului.";
   }
-
-  dispatchNext();
+  batchController = null;
+  downloadBatch.disabled = false;
 });
-function resetFavoriteZip() {
-  favoriteZipController?.abort();
-  favoriteZipController = null;
-  if (favoriteZipUrl) {
-    const url = favoriteZipUrl;
-    if (favoriteZipStarted) setTimeout(() => URL.revokeObjectURL(url), 60000);
-    else URL.revokeObjectURL(url);
-    favoriteZipUrl = null;
+function resetGalleryZip() {
+  galleryZipController?.abort();
+  galleryZipController = null;
+  if (galleryZipUrl) {
+    const url = galleryZipUrl;
+    const cleanup = archiveCleanup;
+    const release = () => {
+      URL.revokeObjectURL(url);
+      cleanup?.();
+    };
+    if (galleryZipStarted) setTimeout(release, 60000);
+    else release();
+    archiveCleanup = null;
+    galleryZipUrl = null;
   }
-  favoriteZipStarted = false;
+  galleryZipStarted = false;
 }
 
 downloadDialog.addEventListener("close", () => {
   if (downloadDialog.open) return;
-  clearTimeout(batchTimer);
-  resetFavoriteZip();
+  batchController?.abort();
+  batchController = null;
+  resetGalleryZip();
 });
 
 downloadArchive.addEventListener("click", () => {
-  if (favoriteZipUrl) favoriteZipStarted = true;
+  if (galleryZipUrl) galleryZipStarted = true;
 });
 
-downloadFavoriteZip.addEventListener("click", async () => {
-  if (downloadFavoriteZip.disabled) return;
+prepareDownloadZip.addEventListener("click", async () => {
+  if (prepareDownloadZip.disabled) return;
   const files = activeDownloads;
   const controller = new AbortController();
-  favoriteZipController = controller;
-  downloadFavoriteZip.disabled = true;
+  galleryZipController = controller;
+  prepareDownloadZip.disabled = true;
   downloadStatus.textContent = "Se pregătește arhiva ZIP…";
+  const date = new Date();
   try {
-    const { makePhotoZip } = await import("./favorite-zip.js?v=1");
-    const archive = await makePhotoZip(files, readOriginal, controller.signal, done => {
-      if (!controller.signal.aborted) downloadStatus.textContent = done + " din " + files.length + " fotografii pregătite pentru ZIP.";
-    });
-    if (controller.signal.aborted || !downloadDialog.open) return;
-    favoriteZipUrl = URL.createObjectURL(archive);
-    setDownloadLink(downloadArchive, { href: favoriteZipUrl, name: "Potetos-Favorite.zip" });
-    downloadFavoriteZip.hidden = true;
+    const { makePhotoZip, temporaryZipFile } = await import("./favorite-zip.js?v=2");
+    const output = files.length > 24 ? await temporaryZipFile() : null;
+    let archive;
+    try {
+      const load = async (file, signal) => (await readDatedPhoto(file, signal)).stamp(date);
+      archive = await makePhotoZip(files, load, controller.signal, done => {
+        if (!controller.signal.aborted) downloadStatus.textContent = done + " din " + files.length + " fotografii pregătite pentru ZIP.";
+      }, output, date);
+      if (controller.signal.aborted || !downloadDialog.open) {
+        await output?.cleanup();
+        return;
+      }
+      galleryZipUrl = URL.createObjectURL(archive);
+      archiveCleanup = output?.cleanup;
+    } catch (error) {
+      await output?.cleanup();
+      throw error;
+    }
+    setDownloadLink(downloadArchive, { href: galleryZipUrl, name: archiveFilename });
+    prepareDownloadZip.hidden = true;
     downloadArchive.hidden = false;
     if (navigator.userActivation?.isActive) {
       downloadStatus.textContent = "Arhiva ZIP este gata.";
@@ -585,22 +600,24 @@ downloadFavoriteZip.addEventListener("click", async () => {
   } catch {
     if (!controller.signal.aborted) downloadStatus.textContent = "Arhiva ZIP nu s-a putut pregăti. Încearcă din nou.";
   } finally {
-    if (favoriteZipController === controller) {
-      downloadFavoriteZip.disabled = false;
-      favoriteZipController = null;
+    if (galleryZipController === controller) {
+      prepareDownloadZip.disabled = false;
+      galleryZipController = null;
     }
   }
 });
 downloadPhotos.addEventListener("click", () => openPhotos(activeDownloads));
 
-async function openDownloads(key) {
-  resetFavoriteZip();
+function openDownloads(key) {
+  resetGalleryZip();
   const allCards = [...collections.values()].flatMap(collection => collection.cards);
   const collection = key === "all" ? { title: "Toate galeriile", cards: allCards }
     : key === "favorites" ? { title: "Favorite", cards: allCards.filter(card => favorites.has(card.dataset.original)) }
     : collections.get(key);
   const groupCards = collection.cards;
   activeDownloads = groupCards.map(photoFile);
+  const zipNames = { all: "Complet", fotografii: "Fotografii", "gta-vi": "GTA-VI", "gta-afise": "GTA-VI-Cu-Text", favorites: "Favorite" };
+  archiveFilename = "Potetos-" + zipNames[key] + ".zip";
   downloadTitle.textContent = collection.title;
   downloadCount.textContent = activeDownloads.length
     ? activeDownloads.length === 1 ? "1 fișier în format original" : `${activeDownloads.length} fișiere în format original`
@@ -611,10 +628,10 @@ async function openDownloads(key) {
   zipHelp.open = false;
   const hasFiles = activeDownloads.length > 0;
   const favoritesDownload = key === "favorites";
-  downloadFavoriteZip.hidden = !favoritesDownload || !hasFiles;
-  downloadFavoriteZip.disabled = false;
-  downloadBatch.hidden = !hasFiles || favoritesDownload;
-  if (favoritesDownload && hasFiles) zipHelp.hidden = false;
+  prepareDownloadZip.hidden = !hasFiles;
+  prepareDownloadZip.disabled = false;
+  downloadBatch.hidden = !hasFiles || favoritesDownload || usesIOS;
+  zipHelp.hidden = !hasFiles;
   const androidShare = usesAndroid && hasNativePhotoShare();
   downloadPhotos.hidden = !hasFiles || !(usesIOS || androidShare);
   downloadPhotos.textContent = usesIOS ? "Salvează în Poze" : "Partajează fotografiile";
@@ -622,7 +639,7 @@ async function openDownloads(key) {
     ? "Salvează originalele din meniul iPhone-ului."
     : "Destinațiile disponibile apar în meniul de partajare al telefonului.";
   downloadPhotosHelp.hidden = downloadPhotos.hidden;
-  downloadHelp.hidden = !hasFiles || favoritesDownload;
+  downloadHelp.hidden = downloadBatch.hidden;
   downloadStatus.textContent = "";
   downloadBatch.disabled = false;
   downloadBatch.textContent = activeDownloads.every(file => /\.jpe?g$/i.test(file.name))
@@ -645,23 +662,6 @@ async function openDownloads(key) {
   }));
   downloadDialog.showModal();
 
-  if (key === "favorites") return;
-  archiveCatalog ??= fetch("download-archives.json?v=1")
-    .then(response => response.ok ? response.json() : {})
-    .catch(() => ({}));
-  const requestFiles = activeDownloads;
-  const archive = (await archiveCatalog)[key];
-  if (!downloadDialog.open || activeDownloads !== requestFiles || !archive) return;
-  const originals = requestFiles.map(file => file.href).sort();
-  if (JSON.stringify(originals) === JSON.stringify([...archive.originals].sort())) {
-    downloadArchive.href = archive.url;
-    downloadArchive.hidden = false;
-    zipHelp.hidden = false;
-    if (usesIOS) {
-      downloadBatch.hidden = true;
-      downloadHelp.hidden = true;
-    }
-  }
 }
 
 const photosDialog = document.querySelector("#save-photos");
@@ -694,7 +694,8 @@ function originalShareUrl(file) {
 function openSinglePhoto(event, file) {
   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
   event.preventDefault();
-  shareSinglePhoto(file);
+  if (usesIOS && hasNativePhotoShare()) shareSinglePhoto(file);
+  else downloadSinglePhoto(file);
 }
 
 function forgetOriginal() {
@@ -707,9 +708,9 @@ function prepareOriginal(file) {
   forgetOriginal();
   const controller = new AbortController();
   const entry = { href: file.href, controller };
-  entry.pending = readOriginal(file, controller.signal).then(original => {
-    entry.payload = { files: [original] };
-    return entry.payload;
+  entry.pending = readDatedPhoto(file, controller.signal).then(original => {
+    entry.original = original;
+    return original;
   }).catch(() => {
     if (singleOriginal === entry) singleOriginal = null;
     return null;
@@ -734,6 +735,22 @@ function showSaveFeedback(text, persistent = false) {
   if (text && !persistent) saveFeedbackTimer = setTimeout(() => { message.textContent = ""; }, 4500);
 }
 
+async function downloadSinglePhoto(file) {
+  if (singleSaving) return;
+  const date = new Date();
+  singleSaving = true;
+  try {
+    showSaveFeedback("Se pregătește fotografia…", true);
+    const original = await readDatedPhoto(file);
+    dispatchDownload(original.stamp(date));
+    showSaveFeedback("");
+  } catch {
+    showSaveFeedback("Fotografia nu s-a putut pregăti. Încearcă din nou.");
+  } finally {
+    singleSaving = false;
+  }
+}
+
 async function shareSinglePhoto(file) {
   if (singleSaving) return;
   if (!hasNativePhotoShare()) {
@@ -743,8 +760,9 @@ async function shareSinglePhoto(file) {
   singleSaving = true;
   try {
     const entry = prepareOriginal(file);
-    if (!entry.payload) showSaveFeedback("Se încarcă fotografia originală…", true);
-    const payload = entry.payload || await entry.pending;
+    if (!entry.original) showSaveFeedback("Se încarcă fotografia originală…", true);
+    const original = entry.original || await entry.pending;
+    const payload = original && { files: [original.stamp(new Date())] };
     if (!payload || !navigator.canShare(payload)) {
       showSaveFeedback("Originalul nu s-a încărcat pentru salvare. Încearcă din nou.");
       return;
@@ -790,16 +808,19 @@ function resetPhotoPanel() {
   sharePhotos.hidden = nextPhotos.hidden = showOriginal.hidden = originalPhoto.hidden = originalDownload.hidden = true;
   originalPhoto.onload = originalPhoto.onerror = null;
   originalPhoto.removeAttribute("src");
+  if (fallbackPhotoUrl) {
+    const url = fallbackPhotoUrl;
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    fallbackPhotoUrl = null;
+  }
   originalPhoto.alt = "";
 }
 
-function showFullPhoto(file) {
+async function showFullPhoto(file, signal) {
   sharePhotos.hidden = true;
   showOriginal.hidden = true;
   originalPhoto.hidden = true;
   originalPhoto.alt = file.name;
-  setDownloadLink(originalDownload, file);
-  originalDownload.hidden = false;
   photoStatus.textContent = "Se încarcă fotografia originală…";
   originalPhoto.onload = () => {
     originalPhoto.hidden = false;
@@ -808,7 +829,17 @@ function showFullPhoto(file) {
   originalPhoto.onerror = () => {
     photoStatus.textContent = "Originalul nu s-a afișat. Îl poți descărca și importa în Poze din Fișiere.";
   };
-  originalPhoto.src = originalShareUrl(file);
+  try {
+    const original = await readDatedPhoto(file, signal);
+    if (signal.aborted) return;
+    const photo = original.stamp(new Date());
+    fallbackPhotoUrl = URL.createObjectURL(photo);
+    originalPhoto.src = fallbackPhotoUrl;
+    setDownloadLink(originalDownload, { href: fallbackPhotoUrl, name: photo.name });
+    originalDownload.hidden = false;
+  } catch {
+    if (!signal.aborted) photoStatus.textContent = "Fotografia nu s-a putut pregăti. Revino la galerie și încearcă din nou.";
+  }
 }
 
 async function readOriginal(file, signal) {
@@ -822,6 +853,13 @@ async function readOriginal(file, signal) {
     throw new Error("Invalid image response");
   }
   return new File([blob], file.name, { type });
+}
+
+async function readDatedPhoto(file, signal) {
+  const { preparePhotoDate } = await import("./photo-date.js?v=1");
+  const original = await readOriginal(file, signal);
+  const stamp = await preparePhotoDate(original);
+  return { file: original, size: original.size, stamp };
 }
 
 function renderPhotoProgress(session) {
@@ -843,7 +881,7 @@ async function preparePhotos(session) {
   const { files, share } = session.groups[session.index];
   renderPhotoProgress(session);
   if (!share) {
-    showFullPhoto(files[0]);
+    showFullPhoto(files[0], controller.signal);
     return;
   }
 
@@ -858,7 +896,7 @@ async function preparePhotos(session) {
     if (controller.signal.aborted) return;
     try {
       const cached = session.deferred?.href === file.href ? session.deferred : null;
-      const original = cached?.original || await readOriginal(file, controller.signal);
+      const original = cached?.original || await readDatedPhoto(file, controller.signal);
       if (controller.signal.aborted) return;
       if (cached) session.deferred = null;
       if (originals.length && size + original.size > shareByteBudget) {
@@ -876,7 +914,7 @@ async function preparePhotos(session) {
   if (controller.signal.aborted || photoSession !== session || !photosDialog.open) return;
 
   const followUp = remaining.length ? [{ files: remaining, share: true }] : [];
-  const payload = { files: originals };
+  const payload = { files: originals.map(original => original.file) };
   if (!originals.length || !navigator.canShare(payload)) {
     session.groups.splice(session.index, 1, ...individualPhotoGroups([...loaded, ...failed]), ...followUp);
     preparePhotos(session);
@@ -884,7 +922,7 @@ async function preparePhotos(session) {
   }
 
   session.groups.splice(session.index, 1, { files: loaded, share: true }, ...individualPhotoGroups(failed), ...followUp);
-  session.ready = payload;
+  session.ready = originals;
   sharePhotos.hidden = false;
   const count = originals.length;
   sharePhotos.textContent = usesIOS ? (count === 1 ? "Salvează în Poze" : "Salvează " + count + " în Poze") : "Partajează " + count;
@@ -900,13 +938,14 @@ async function preparePhotos(session) {
 
 async function sharePreparedPhotos() {
   const session = photoSession;
-  const payload = session?.ready;
-  if (!payload || sharePhotos.disabled) return;
+  const originals = session?.ready;
+  if (!originals || sharePhotos.disabled) return;
   sharePhotos.disabled = previousPhotos.disabled = nextPhotos.disabled = showOriginal.disabled = true;
   try {
-    await navigator.share(payload);
+    const date = new Date();
+    await navigator.share({ files: originals.map(original => original.stamp(date)) });
   } catch (error) {
-    if (error.name !== "AbortError" && photoSession === session && session.ready === payload && photosDialog.open) {
+    if (error.name !== "AbortError" && photoSession === session && session.ready === originals && photosDialog.open) {
       photoStatus.textContent = "Meniul de salvare nu s-a deschis. Încearcă din nou sau deschide originalul.";
       showOriginal.hidden = false;
     }
@@ -939,10 +978,10 @@ photosDialog.addEventListener("close", () => {
   resetPhotoPanel();
 });
 
+singleDownload.addEventListener("click", event => openSinglePhoto(event, photoFile(cards[current])));
 if (usesIOS) {
   singleDownload.setAttribute("aria-label", "Salvează fotografia în Poze");
   singleDownload.title = "Salvează în Poze";
-  singleDownload.addEventListener("click", event => openSinglePhoto(event, photoFile(cards[current])));
 }
 
 if (usesIOS && hasNativePhotoShare()) {

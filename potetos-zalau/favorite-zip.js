@@ -39,12 +39,42 @@ function uniqueName(name, usedNames) {
   return candidate;
 }
 
-export async function makePhotoZip(entries, load, signal, onProgress) {
+export async function temporaryZipFile() {
+  if (!navigator.storage?.getDirectory) return null;
+  let folder;
+  let name;
+  let writer;
+  try {
+    const root = await navigator.storage.getDirectory();
+    folder = await root.getDirectoryHandle("potetos-downloads", { create: true });
+    name = crypto.randomUUID() + ".zip";
+    const handle = await folder.getFileHandle(name, { create: true });
+    writer = await handle.createWritable();
+    let closed = false;
+    return {
+      write: chunk => writer.write(chunk),
+      async finish() {
+        await writer.close();
+        closed = true;
+        return handle.getFile();
+      },
+      async cleanup() {
+        if (!closed) await writer.abort().catch(() => {});
+        await folder.removeEntry(name).catch(() => {});
+      }
+    };
+  } catch {
+    if (folder && name) await folder.removeEntry(name).catch(() => {});
+    return null;
+  }
+}
+
+export async function makePhotoZip(entries, load, signal, onProgress, output = null, now = new Date()) {
   const encoder = new TextEncoder();
   const usedNames = new Set();
   const parts = [];
   const directory = [];
-  const now = new Date();
+
   const dosTime = now.getHours() << 11 | now.getMinutes() << 5 | now.getSeconds() >> 1;
   const dosDate = (now.getFullYear() - 1980) << 9 | (now.getMonth() + 1) << 5 | now.getDate();
   let offset = 0;
@@ -72,7 +102,12 @@ export async function makePhotoZip(entries, load, signal, onProgress) {
     localHeader.setUint32(22, photo.size, true);
     localHeader.setUint16(26, name.length, true);
     local.set(name, 30);
-    parts.push(local, photo);
+    if (output) {
+      await output.write(local);
+      await output.write(photo);
+    } else {
+      parts.push(local, photo);
+    }
 
     const central = new Uint8Array(46 + name.length);
     const centralHeader = new DataView(central.buffer);
@@ -94,5 +129,10 @@ export async function makePhotoZip(entries, load, signal, onProgress) {
   end.setUint16(10, entries.length, true);
   end.setUint32(12, directorySize, true);
   end.setUint32(16, offset, true);
+  if (output) {
+    await output.write(new Blob([...directory, end.buffer]));
+    const file = await output.finish();
+    return file.slice(0, file.size, "application/zip");
+  }
   return new Blob([...parts, ...directory, end.buffer], { type: "application/zip" });
 }
