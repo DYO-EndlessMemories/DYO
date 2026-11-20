@@ -281,10 +281,9 @@ video { display: block; width: 100%; max-height: 70vh; background: #161514; }
   -webkit-touch-callout: default;
 }
 .save-photos-actions { margin-top: 14px; }
-.iphone-import { margin-top: 14px; font-size: .875rem; }
-.iphone-import summary { cursor: pointer; font-weight: 700; }
-.iphone-import ol { margin: 8px 0 0; padding-left: 22px; }
-.iphone-import li + li { margin-top: 6px; }
+.zip-help { margin-top: 14px; font-size: .875rem; }
+.zip-help summary { cursor: pointer; font-weight: 700; }
+.zip-help p { margin: 8px 0 0; }
 .download-files { list-style: none; padding: 0; margin: 14px 0 0; }
 .download-files li { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 8px; }
 .download-files li + li { border-top: 1px solid #ded7ca; }

@@ -6,9 +6,9 @@
   <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#faf9f6">
   <title>Poteto’s Zalău — Galerie de predare | DYO</title>
-  <link rel="stylesheet" href="gallery.css?v=16">
+  <link rel="stylesheet" href="gallery.css?v=17">
   <script src="videos.js" defer></script>
-  <script src="gallery.js?v=14" defer></script>
+  <script src="gallery.js?v=15" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -1161,6 +1161,7 @@
           <h2 id="favorite-title" tabindex="-1">Favorite</h2>
           <p id="favorite-empty">Apasă pe inima unei fotografii ca să o adaugi aici.</p>
         </div>
+        <button class="button outline" id="favorite-download-all" type="button" data-download-set="favorites" hidden>Descarcă tot</button>
       </header>
       <div id="favorite-grid" class="sample-grid"></div>
     </section>
@@ -1211,13 +1212,10 @@
     </div>
     <p id="download-photos-help" class="download-help" hidden></p>
     <p id="download-help" class="download-help" hidden>Browserul poate cere permisiunea pentru descărcări multiple. Lasă fereastra deschisă până se trimit toate.</p>
-    <details id="iphone-import" class="iphone-import" hidden>
-      <summary>Salvează toate imaginile în Poze pe iPhone</summary>
-      <ol>
-        <li>Descarcă arhiva ZIP și apas-o în <strong>Fișiere → Descărcări</strong> ca s-o dezarhivezi.</li>
-        <li>Deschide dosarul cu imagini și apasă <strong>… → Selectați → Selectați tot</strong>. Dacă arhiva conține mai multe galerii, intră pe rând în fiecare dosar.</li>
-        <li>Apasă <strong>Partajați → Salvați imaginile</strong> pentru a importa selecția în Poze.</li>
-      </ol>
+    <details id="zip-help" class="zip-help" hidden>
+      <summary>Instrucțiuni pentru arhiva ZIP</summary>
+      <p><strong>iPhone</strong> — În Fișiere → Descărcări, apasă arhiva ca s-o dezarhivezi. În dosarul extras, selectează imaginile și alege Partajați → Salvați imaginile. Dacă sunt mai multe dosare, repetă pentru fiecare.</p>
+      <p><strong>Android</strong> — În Fișiere → Descărcări, deschide arhiva și alege Extrage. Găsești imaginile în dosarul extras și în galeria telefonului, la dosarele de pe dispozitiv.</p>
     </details>
     <p id="download-status" class="download-help" role="status"></p>
     <ul id="download-files" class="download-files"></ul>
