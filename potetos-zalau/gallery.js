@@ -167,8 +167,10 @@ function setupGallery(section) {
   const groupCards = [...section.querySelectorAll(".photo")];
   const title = section.querySelector("h2").textContent;
   const rest = section.querySelector(".gallery-rest");
+  const sample = section.querySelector(".sample-grid");
+  const grid = rest?.querySelector(".grid");
 
-  groupCards.forEach((card, index) => {
+  function bindPhoto(card, index) {
     card.querySelector(".view").addEventListener("click", () => {
       cards = groupCards;
       activeTitle = title;
@@ -176,13 +178,32 @@ function setupGallery(section) {
       dialog.showModal();
       document.querySelector("#close").focus();
     });
-  });
+  }
 
-  if (!rest) return;
+  groupCards.forEach(bindPhoto);
+  if (!grid) return;
+
+  let customPreview = false;
+  if (sample && section.dataset.previewFrames) {
+    const byFrame = new Map(groupCards.map((card, index) => {
+      const filename = card.dataset.filename || card.dataset.original.split("/").pop();
+      const frame = filename.match(/^DYO_POT2_O-(\d+)\.jpe?g$/i)?.[1];
+      return [frame, { card, index }];
+    }));
+    const selected = section.dataset.previewFrames.split(/\s+/).map(frame => byFrame.get(frame));
+    if (selected.every(Boolean)) {
+      grid.prepend(...sample.children);
+      for (const { card, index } of selected) {
+        const preview = card.cloneNode(true);
+        bindPhoto(preview, index);
+        sample.append(preview);
+      }
+      customPreview = true;
+    }
+  }
 
   const toggle = section.querySelector(".gallery-toggle");
   const collapse = section.querySelector(".collapse-gallery");
-  const grid = rest.querySelector(".grid");
   const extraCards = [...grid.children];
   const aspectRatios = extraCards.map(card => {
     const img = card.querySelector("img");
@@ -207,6 +228,7 @@ function setupGallery(section) {
 
   function setExpanded(expanded) {
     rest.hidden = !expanded;
+    if (customPreview) sample.hidden = expanded;
     toggle.setAttribute("aria-expanded", String(expanded));
     toggle.firstChild.textContent = expanded ? "Restrânge " : "Vezi toate ";
     toggle.querySelector("span").textContent = expanded ? "−" : "+";
