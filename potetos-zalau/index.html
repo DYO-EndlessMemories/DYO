@@ -6,9 +6,9 @@
   <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#faf9f6">
   <title>Poteto’s Zalău — Galerie de predare | DYO</title>
-  <link rel="stylesheet" href="gallery.css?v=7">
+  <link rel="stylesheet" href="gallery.css?v=8">
   <script src="videos.js" defer></script>
-  <script src="gallery.js?v=7" defer></script>
+  <script src="gallery.js?v=8" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -21,7 +21,6 @@
       <a href="#gta-vi">GTA VI</a>
       <a href="#gta-afise">Afișe</a>
       <a href="#videouri" id="video-link" hidden>Clipuri</a>
-      <button class="favorites-nav" type="button" data-download-set="favorites" hidden>Descarcă favorite <span data-favorite-count>0</span></button>
     </nav>
     </div>
   </header>
@@ -34,6 +33,10 @@
         <h1 id="title">Poteto’s<br> Zalău</h1>
         <div class="intro-actions">
           <button class="button primary" type="button" data-download-set="all" hidden>Descarcă toate galeriile</button>
+          <div class="intro-favorites" hidden>
+            <button type="button" data-download-set="favorites">Descarcă favorite <span data-favorite-count>0</span></button>
+            <a href="#favorite">Vezi favorite</a>
+          </div>
         </div>
       </div>
       <img class="cover" src="media/fotografii/sync-aeffb9d873938705d34d2b0e-preview.webp" width="1067" height="1600" alt="Cornet Poteto’s cu cartofi prăjiți, luminat pe fundal negru" fetchpriority="high">
@@ -46,7 +49,7 @@
       <header class="section-head">
         <div class="section-title">
           <h2 id="fotografii-title">Fotografii</h2>
-          <p>164 fotografii · JPG</p>
+          <p>164 fotografii</p>
         </div>
         <button class="button gallery-toggle" type="button" aria-expanded="false" aria-controls="fotografii-rest" hidden>Vezi toate <span aria-hidden="true">+</span></button>
       </header>
@@ -1152,6 +1155,15 @@
       <div class="section-head"><h2 id="videos-title">Clipuri</h2></div>
       <div id="video-grid" class="video-grid"></div>
     </section>
+    <section id="favorite" class="section" aria-labelledby="favorite-title" hidden>
+      <header class="section-head">
+        <div>
+          <h2 id="favorite-title" tabindex="-1">Favorite</h2>
+          <p id="favorite-empty">Apasă pe inima unei fotografii ca să o adaugi aici.</p>
+        </div>
+      </header>
+      <div id="favorite-grid" class="sample-grid"></div>
+    </section>
     </div>
   </main>
 
@@ -1161,12 +1173,17 @@
     <div class="lightbox-bar">
       <button type="button" class="favorite-toggle" id="lightbox-favorite" aria-pressed="false" aria-label="Adaugă la favorite">♡</button>
       <span id="position" aria-live="polite"></span>
-      <a class="button" id="single-download" download>Descarcă fotografia</a>
+      <a class="photo-download" id="single-download" aria-label="Descarcă fotografia" title="Descarcă fotografia" download></a>
       <button type="button" id="close" aria-label="Închide">×</button>
     </div>
     <div class="lightbox-stage">
       <button type="button" id="previous" aria-label="Fotografia anterioară">‹</button>
-      <img id="large-photo" alt="" draggable="false">
+      <div class="lightbox-image">
+        <div class="lightbox-image-inner">
+          <img id="large-photo" alt="" draggable="false">
+          <button type="button" class="favorite-toggle" id="stage-favorite" aria-pressed="false" aria-label="Adaugă la favorite">♡</button>
+        </div>
+      </div>
       <button type="button" id="next" aria-label="Fotografia următoare">›</button>
     </div>
     <nav class="filmstrip" id="filmstrip" aria-label="Fotografii din apropiere"></nav>
@@ -1179,8 +1196,10 @@
     <p id="downloads-count"></p>
     <div class="downloads-actions">
       <a class="button primary" id="download-archive" hidden>Descarcă ZIP</a>
-      <a class="button outline" id="download-next" hidden></a>
+      <button type="button" class="button outline" id="download-batch">Descarcă toate separat</button>
     </div>
+    <p id="download-help" class="download-help" hidden>Browserul poate cere permisiunea pentru descărcări multiple. Pe iPhone, Safari descarcă fișierele în Fișiere.</p>
+    <p id="download-status" class="download-help" role="status"></p>
     <ul id="download-files" class="download-files"></ul>
   </dialog>
 </body>

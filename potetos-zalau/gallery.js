@@ -6,7 +6,7 @@ const position = document.querySelector("#position");
 const singleDownload = document.querySelector("#single-download");
 const stage = dialog.querySelector(".lightbox-stage");
 const filmstrip = document.querySelector("#filmstrip");
-const lightboxFavorite = document.querySelector("#lightbox-favorite");
+const lightboxFavorites = [document.querySelector("#lightbox-favorite"), document.querySelector("#stage-favorite")];
 const mobileLayout = matchMedia("(max-width: 700px)");
 let current = 0;
 let gesture = null;
@@ -16,7 +16,7 @@ let filmstripTimer;
 
 const collections = new Map();
 const favoriteStorageKey = "potetos-zalau-favorites";
-const favoriteButtons = new Map();
+const favoriteGrid = document.querySelector("#favorite-grid");
 let favorites;
 try {
   const saved = JSON.parse(localStorage.getItem(favoriteStorageKey));
@@ -32,10 +32,26 @@ function renderFavorite(button, key) {
   button.textContent = selected ? "♥" : "♡";
 }
 
-function updateFavoriteCount() {
-  document.querySelectorAll("[data-favorite-count]").forEach(element => {
-    element.textContent = favoriteFiles().length;
+function updateFavorites() {
+  const selected = [...collections.values()].flatMap(collection => collection.cards)
+    .filter(card => favorites.has(card.dataset.original));
+  document.querySelector("[data-favorite-count]").textContent = selected.length;
+  document.querySelector("#favorite-empty").hidden = selected.length > 0;
+
+  const focused = favoriteGrid.contains(document.activeElement) ? document.activeElement : null;
+  const focusIndex = focused ? [...favoriteGrid.children].indexOf(focused.closest(".photo")) : -1;
+  const previews = selected.map((source, index) => {
+    const card = source.cloneNode(true);
+    card.querySelector(".photo-actions").remove();
+    bindPhoto(card, selected, "Favorite", index);
+    addPhotoActions(card);
+    return card;
   });
+  favoriteGrid.replaceChildren(...previews);
+  if (focused) {
+    const next = previews[Math.min(focusIndex, previews.length - 1)]?.querySelector(".favorite-toggle");
+    (next || document.querySelector("#favorite-title")).focus({ preventScroll: true });
+  }
 }
 
 function toggleFavorite(key) {
@@ -46,9 +62,13 @@ function toggleFavorite(key) {
   } catch {
     // Favorites still work for the current page when storage is unavailable.
   }
-  for (const button of favoriteButtons.get(key) || []) renderFavorite(button, key);
-  if (dialog.open) renderFavorite(lightboxFavorite, cards[current].dataset.original);
-  updateFavoriteCount();
+  for (const button of document.querySelectorAll("[data-favorite-key]")) {
+    if (button.dataset.favoriteKey === key) renderFavorite(button, key);
+  }
+  if (dialog.open) {
+    for (const button of lightboxFavorites) renderFavorite(button, cards[current].dataset.original);
+  }
+  updateFavorites();
 }
 
 function photoFile(card) {
@@ -70,15 +90,13 @@ function addPhotoActions(card) {
   download.className = "photo-download";
   download.href = file.href;
   download.download = file.name;
-  download.textContent = "↓";
   download.setAttribute("aria-label", `Descarcă ${file.name}`);
   const favorite = document.createElement("button");
   favorite.type = "button";
   favorite.className = "favorite-toggle";
+  favorite.dataset.favoriteKey = original;
   renderFavorite(favorite, original);
   favorite.addEventListener("click", () => toggleFavorite(original));
-  if (!favoriteButtons.has(original)) favoriteButtons.set(original, []);
-  favoriteButtons.get(original).push(favorite);
   actions.append(download, favorite);
   card.append(actions);
 }
@@ -132,11 +150,13 @@ function showPhoto(index) {
   largePhoto.alt = `${activeTitle} · ${current + 1} / ${cards.length}`;
   position.textContent = `${current + 1} / ${cards.length}`;
   singleDownload.href = card.dataset.original;
-  singleDownload.download = card.dataset.filename || "";
-  renderFavorite(lightboxFavorite, card.dataset.original);
+  singleDownload.download = photoFile(card).name;
+  for (const button of lightboxFavorites) renderFavorite(button, card.dataset.original);
   updateFilmstrip();
 }
-lightboxFavorite.addEventListener("click", () => toggleFavorite(cards[current].dataset.original));
+for (const button of lightboxFavorites) {
+  button.addEventListener("click", () => toggleFavorite(cards[current].dataset.original));
+}
 document.querySelector("#close").addEventListener("click", () => dialog.close());
 document.querySelector("#previous").addEventListener("click", () => showPhoto(current - 1));
 document.querySelector("#next").addEventListener("click", () => showPhoto(current + 1));
@@ -161,7 +181,7 @@ stage.addEventListener("pointerup", event => {
 });
 stage.addEventListener("pointercancel", () => { gesture = null; });
 dialog.addEventListener("click", event => {
-  if ((event.target === stage || event.target === dialog) && performance.now() > suppressClickUntil) dialog.close();
+  if ((event.target === stage || event.target === dialog || event.target.matches(".lightbox-image")) && performance.now() > suppressClickUntil) dialog.close();
 });
 dialog.addEventListener("close", () => {
   clearTimeout(filmstripTimer);
@@ -245,6 +265,16 @@ function applyJustified(cards, aspectRatios, width, gap) {
   if (rowStart < cards.length) finishRow(cards.length, preferredHeight, false);
 }
 
+function bindPhoto(card, groupCards, title, index) {
+  card.querySelector(".view").addEventListener("click", () => {
+    cards = groupCards;
+    activeTitle = title;
+    dialog.showModal();
+    showPhoto(index);
+    document.querySelector("#close").focus();
+  });
+}
+
 function setupGallery(section) {
   const groupCards = [...section.querySelectorAll(".photo")];
   const title = section.querySelector("h2").textContent;
@@ -252,17 +282,7 @@ function setupGallery(section) {
   const sample = section.querySelector(".sample-grid");
   const grid = rest?.querySelector(".grid");
 
-  function bindPhoto(card, index) {
-    card.querySelector(".view").addEventListener("click", () => {
-      cards = groupCards;
-      activeTitle = title;
-      dialog.showModal();
-      showPhoto(index);
-      document.querySelector("#close").focus();
-    });
-  }
-
-  groupCards.forEach(bindPhoto);
+  groupCards.forEach((card, index) => bindPhoto(card, groupCards, title, index));
   if (!grid) {
     groupCards.forEach(addPhotoActions);
     return;
@@ -280,7 +300,7 @@ function setupGallery(section) {
       grid.prepend(...sample.children);
       for (const { card, index } of selected) {
         const preview = card.cloneNode(true);
-        bindPhoto(preview, index);
+        bindPhoto(preview, groupCards, title, index);
         addPhotoActions(preview);
         sample.append(preview);
       }
@@ -292,6 +312,19 @@ function setupGallery(section) {
   const toggle = section.querySelector(".gallery-toggle");
   const collapse = section.querySelector(".collapse-gallery");
   const extraCards = [...grid.children];
+  const shown = new Set([...sample.children].map(card => card.dataset.original));
+  const teaser = document.createElement("div");
+  teaser.className = "gallery-teaser sample-grid";
+  teaser.setAttribute("aria-hidden", "true");
+  for (const card of extraCards.filter(card => !shown.has(card.dataset.original)).slice(0, 4)) {
+    const thumb = card.querySelector("img").cloneNode();
+    thumb.alt = "";
+    teaser.append(thumb);
+  }
+  const more = document.createElement("div");
+  more.className = "gallery-more";
+  more.append(teaser, toggle);
+  sample.after(more);
   const aspectRatios = extraCards.map(card => {
     const img = card.querySelector("img");
     return Number(img.getAttribute("width")) / Number(img.getAttribute("height"));
@@ -316,6 +349,8 @@ function setupGallery(section) {
   function setExpanded(expanded) {
     rest.hidden = !expanded;
     if (customPreview) sample.hidden = expanded;
+    teaser.hidden = expanded;
+    more.classList.toggle("is-expanded", expanded);
     toggle.setAttribute("aria-expanded", String(expanded));
     toggle.firstChild.textContent = expanded ? "Restrânge " : "Vezi toate ";
     toggle.querySelector("span").textContent = expanded ? "−" : "+";
@@ -343,30 +378,42 @@ const downloadDialog = document.querySelector("#downloads");
 const downloadTitle = document.querySelector("#downloads-title");
 const downloadCount = document.querySelector("#downloads-count");
 const downloadArchive = document.querySelector("#download-archive");
-const downloadNext = document.querySelector("#download-next");
+const downloadBatch = document.querySelector("#download-batch");
 const downloadFiles = document.querySelector("#download-files");
+const downloadHelp = document.querySelector("#download-help");
+const downloadStatus = document.querySelector("#download-status");
 let archiveCatalog;
 let activeDownloads = [];
-let downloadIndex = 0;
+let batchTimer;
 
 function setDownloadLink(link, file) {
   link.href = file.href;
   link.download = file.name;
 }
 
-function updateNextDownload() {
-  const file = activeDownloads[downloadIndex];
-  downloadNext.hidden = !file;
-  if (file) {
-    setDownloadLink(downloadNext, file);
-    downloadNext.textContent = `Descarcă separat ${downloadIndex + 1}/${activeDownloads.length}`;
-  }
-}
+downloadBatch.addEventListener("click", () => {
+  const rows = [...downloadFiles.children];
+  const batchSize = rows.length;
+  downloadBatch.disabled = true;
+  for (const row of rows) row.lastElementChild.textContent = "În coadă";
+  let next = 0;
 
-downloadNext.addEventListener("click", () => {
-  downloadIndex++;
-  setTimeout(updateNextDownload, 0);
+  function dispatchNext() {
+    if (!downloadDialog.open) return;
+    const row = rows[next++];
+    if (row.lastElementChild.textContent === "În coadă") row.firstElementChild.click();
+    if (next < batchSize) {
+      if (next === 1 || next % 20 === 0) downloadStatus.textContent = `${next} din ${batchSize} trimise browserului.`;
+      batchTimer = setTimeout(dispatchNext, 150);
+    } else {
+      downloadStatus.textContent = `${batchSize} din ${batchSize} trimise browserului. Verifică finalizarea în lista de descărcări a browserului.`;
+      downloadBatch.disabled = false;
+    }
+  }
+
+  dispatchNext();
 });
+downloadDialog.addEventListener("close", () => clearTimeout(batchTimer));
 
 async function openDownloads(key) {
   const all = [...collections.values()].flatMap(collection => collection.files);
@@ -374,19 +421,26 @@ async function openDownloads(key) {
     : key === "favorites" ? { title: "Favorite", files: favoriteFiles() }
     : collections.get(key);
   activeDownloads = collection.files;
-  downloadIndex = 0;
   downloadTitle.textContent = collection.title;
   downloadCount.textContent = activeDownloads.length
     ? activeDownloads.length === 1 ? "1 fișier în format original" : `${activeDownloads.length} fișiere în format original`
     : "Apasă pe o inimă din galerie pentru a adăuga fotografii aici.";
   downloadArchive.hidden = true;
-  updateNextDownload();
+  const hasFiles = activeDownloads.length > 0;
+  downloadBatch.hidden = !hasFiles;
+  downloadHelp.hidden = !hasFiles;
+  downloadStatus.textContent = "";
+  downloadBatch.disabled = false;
+  downloadBatch.textContent = activeDownloads.every(file => /\.jpe?g$/i.test(file.name))
+    ? "Descarcă toate JPG-urile" : "Descarcă toate separat";
   downloadFiles.replaceChildren(...activeDownloads.map(file => {
     const item = document.createElement("li");
     const link = document.createElement("a");
     setDownloadLink(link, file);
     link.textContent = file.name;
-    item.append(link);
+    const status = document.createElement("span");
+    link.addEventListener("click", () => { status.textContent = "Trimis browserului"; });
+    item.append(link, status);
     return item;
   }));
   downloadDialog.showModal();
@@ -397,7 +451,7 @@ async function openDownloads(key) {
     .catch(() => ({}));
   const requestFiles = activeDownloads;
   const archive = (await archiveCatalog)[key];
-  if (activeDownloads !== requestFiles || !archive) return;
+  if (!downloadDialog.open || activeDownloads !== requestFiles || !archive) return;
   const originals = requestFiles.map(file => file.href).sort();
   if (JSON.stringify(originals) === JSON.stringify([...archive.originals].sort())) {
     downloadArchive.href = archive.url;
@@ -407,13 +461,12 @@ async function openDownloads(key) {
 
 for (const section of document.querySelectorAll(".gallery-section")) {
   if (["fotografii", "gta-vi", "gta-afise"].includes(section.id)) {
-    const files = [...section.querySelectorAll(".photo")].map(photoFile);
-    collections.set(section.id, { title: section.querySelector("h2").textContent, files });
+    const galleryCards = [...section.querySelectorAll(".photo")];
+    const files = galleryCards.map(photoFile);
+    collections.set(section.id, { title: section.querySelector("h2").textContent, files, cards: galleryCards });
     const actions = document.createElement("div");
     actions.className = "section-actions";
-    const toggle = section.querySelector(".gallery-toggle");
-    toggle.before(actions);
-    actions.append(toggle);
+    section.querySelector(".section-head").append(actions);
     const download = document.createElement("button");
     download.className = "button outline";
     download.type = "button";
@@ -428,7 +481,9 @@ document.querySelectorAll("[data-download-set]").forEach(button => {
   button.hidden = false;
   button.addEventListener("click", () => openDownloads(button.dataset.downloadSet));
 });
-updateFavoriteCount();
+document.querySelector(".intro-favorites").hidden = false;
+document.querySelector("#favorite").hidden = false;
+updateFavorites();
 
 if ("IntersectionObserver" in window && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
   const highlight = new IntersectionObserver(entries => {
