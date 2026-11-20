@@ -6,9 +6,9 @@
   <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#faf9f6">
   <title>Poteto’s Zalău — Galerie de predare | DYO</title>
-  <link rel="stylesheet" href="gallery.css?v=14">
+  <link rel="stylesheet" href="gallery.css?v=15">
   <script src="videos.js" defer></script>
-  <script src="gallery.js?v=10" defer></script>
+  <script src="gallery.js?v=11" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -1202,8 +1202,10 @@
     <p id="downloads-count"></p>
     <div class="downloads-actions">
       <a class="button primary" id="download-archive" hidden>Descarcă ZIP</a>
+      <button type="button" class="button outline" id="download-photos" hidden>Salvează în Poze</button>
       <button type="button" class="button outline" id="download-batch">Descarcă toate separat</button>
     </div>
+    <p id="download-photos-help" class="download-help" hidden></p>
     <p id="download-help" class="download-help" hidden>Browserul poate cere permisiunea pentru descărcări multiple. Lasă fereastra deschisă până se trimit toate.</p>
     <details id="iphone-import" class="iphone-import" hidden>
       <summary>Salvează toate imaginile în Poze pe iPhone</summary>
@@ -1215,6 +1217,21 @@
     </details>
     <p id="download-status" class="download-help" role="status"></p>
     <ul id="download-files" class="download-files"></ul>
+  </dialog>
+  <dialog id="save-photos" class="download-dialog" aria-labelledby="save-photos-title">
+    <header class="downloads-head">
+      <h2 id="save-photos-title">Salvează în Poze</h2>
+      <form method="dialog"><button class="button" aria-label="Închide">×</button></form>
+    </header>
+    <p id="save-photos-progress" class="download-help"></p>
+    <p id="save-photos-status" class="download-help" role="status"></p>
+    <img id="save-photos-original" alt="" draggable="false" hidden>
+    <div class="downloads-actions save-photos-actions">
+      <button class="button primary" type="button" id="save-photos-share" hidden>Salvează în Poze</button>
+      <button class="button outline" type="button" id="save-photos-show-original" hidden>Deschide originalul</button>
+      <a class="button outline" id="save-photos-download" hidden>Descarcă originalul în Fișiere</a>
+      <button class="button outline" type="button" id="save-photos-next" hidden>Continuă cu următoarele</button>
+    </div>
   </dialog>
 </body>
 </html>

@@ -240,6 +240,17 @@ video { display: block; width: 100%; max-height: 70vh; background: #161514; }
 .downloads-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .download-help { margin: 10px 0 0; color: var(--muted); font-size: .875rem; }
 .download-help:empty { display: none; }
+.ios-photo-save .photo .view,
+.ios-photo-save #large-photo { -webkit-touch-callout: none; user-select: none; }
+#save-photos-original {
+  display: block;
+  width: 100%;
+  max-height: 46vh;
+  object-fit: contain;
+  margin-top: 14px;
+  -webkit-touch-callout: default;
+}
+.save-photos-actions { margin-top: 14px; }
 .iphone-import { margin-top: 14px; font-size: .875rem; }
 .iphone-import summary { cursor: pointer; font-weight: 700; }
 .iphone-import ol { margin: 8px 0 0; padding-left: 22px; }
