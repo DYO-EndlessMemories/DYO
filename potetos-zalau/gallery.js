@@ -81,7 +81,7 @@ function toggleFavorite(key) {
 function photoFile(card) {
   const href = card.dataset.original;
   const name = card.dataset.filename || decodeURIComponent(new URL(href, document.baseURI).pathname.split("/").pop());
-  return { href, name };
+  return { href, name, preview: card.querySelector("img").src };
 }
 
 function favoriteFiles() {
@@ -526,10 +526,9 @@ async function openDownloads(key) {
   downloadBatch.hidden = !hasFiles;
   downloadPhotos.hidden = !usesIOS || !hasFiles;
   if (usesIOS) {
-    const batchCount = hasNativePhotoShare() ? activeDownloads.filter(file => !releaseAttachment(file)).length : 0;
-    downloadPhotosHelp.textContent = batchCount === activeDownloads.length ? "Pozele se salvează în loturi." :
-      batchCount ? `${batchCount} din ${activeDownloads.length} pot fi trimise în loturi. Celelalte se salvează pe rând.` :
-      "Fotografiile se salvează pe rând.";
+    downloadPhotosHelp.textContent = hasNativePhotoShare()
+      ? "Salvezi în loturi din meniul iPhone-ului. Imaginile din GitHub Releases se salvează la rezoluția galeriei. Alege ZIP pentru toate originalele."
+      : "Poți deschide și salva fotografiile pe rând.";
   }
   downloadPhotosHelp.hidden = downloadPhotos.hidden;
   downloadHelp.hidden = !hasFiles;
@@ -576,7 +575,7 @@ const originalDownload = document.querySelector("#save-photos-download");
 const sharePhotos = document.querySelector("#save-photos-share");
 const nextPhotos = document.querySelector("#save-photos-next");
 const showOriginal = document.querySelector("#save-photos-show-original");
-const shareBatchSize = 4;
+const shareBatchSize = 8;
 let photoSession;
 
 function releaseAttachment(file) {
@@ -601,13 +600,12 @@ function hasNativePhotoShare() {
 function openPhotos(files) {
   if (!files.length || photosDialog.open) return;
   const nativeShare = hasNativePhotoShare();
-  const shareable = nativeShare ? files.filter(file => !releaseAttachment(file)) : [];
-  const individual = nativeShare ? files.filter(releaseAttachment) : files;
-  const groups = [];
-  for (let start = 0; start < shareable.length; start += shareBatchSize) {
-    groups.push({ files: shareable.slice(start, start + shareBatchSize), share: true });
+  const groups = nativeShare ? [] : individualPhotoGroups(files);
+  if (nativeShare) {
+    for (let start = 0; start < files.length; start += shareBatchSize) {
+      groups.push({ files: files.slice(start, start + shareBatchSize), share: true });
+    }
   }
-  groups.push(...individualPhotoGroups(individual));
   photoSession = { groups, total: files.length, index: 0, offset: 0, controller: new AbortController() };
   photosDialog.showModal();
   preparePhotos(photoSession);
@@ -638,6 +636,24 @@ function showFullPhoto(file) {
   originalPhoto.src = file.href;
 }
 
+async function readGalleryPhoto(file, signal) {
+  const response = await fetch(file.preview, { signal });
+  if (!response.ok) throw new Error("Gallery image unavailable");
+  const bitmap = await createImageBitmap(await response.blob());
+  const canvas = document.createElement("canvas");
+  try {
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    canvas.getContext("2d").drawImage(bitmap, 0, 0);
+    const jpeg = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", .95));
+    if (!jpeg) throw new Error("Could not prepare gallery image");
+    return new File([jpeg], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" });
+  } finally {
+    bitmap.close();
+    canvas.width = canvas.height = 1;
+  }
+}
+
 async function readOriginal(file, signal) {
   const response = await fetch(file.href, { signal });
   if (!response.ok) throw new Error("Original unavailable");
@@ -666,8 +682,14 @@ async function preparePhotos(session) {
   }
 
   nextPhotos.hidden = true;
-  photoStatus.textContent = files.length === 1 ? "Se pregătește fotografia originală…" : "Se pregătesc fotografiile originale…";
-  const results = await Promise.allSettled(files.map(file => readOriginal(file, session.controller.signal)));
+  photoStatus.textContent = files.length === 1 ? "Se pregătește fotografia…" : "Se pregătesc fotografiile…";
+  const results = [];
+  for (let start = 0; start < files.length; start += 2) {
+    if (session.controller.signal.aborted) return;
+    results.push(...await Promise.allSettled(files.slice(start, start + 2).map(file =>
+      (releaseAttachment(file) ? readGalleryPhoto : readOriginal)(file, session.controller.signal)
+    )));
+  }
   if (photoSession !== session || !photosDialog.open) return;
 
   const originals = [];
@@ -695,6 +717,9 @@ async function preparePhotos(session) {
   photoStatus.textContent = originals.length === 1 ?
     "Alege „Salvează imaginea” din meniul iPhone-ului." :
     "Alege „Salvează imaginile” din meniul iPhone-ului, apoi continuă cu următoarele fotografii.";
+  if (loaded.some(releaseAttachment)) {
+    photoStatus.textContent += " Sunt incluse imagini la rezoluția galeriei.";
+  }
   showOriginal.textContent = originals.length === 1 ? "Deschide originalul" : "Deschide originalele pe rând";
   showOriginal.hidden = false;
   renderPhotoProgress(session);
@@ -782,7 +807,7 @@ if (usesIOS) {
     const card = previewCard(event.target);
     if (!card) return;
     event.preventDefault();
-    if (press && !photosDialog.open) openPressedPhoto(card);
+    if (!photosDialog.open) openPressedPhoto(card);
   });
   document.addEventListener("click", event => {
     if (!preventPreviewClick || !previewCard(event.target)) return;
