@@ -26,7 +26,9 @@
   --line: #dedacf;
   --accent: #f5d74a;
   --gap: 9px;
-  --brand-font: Lobster, Georgia, serif;
+  --potetos-font: Lobster, Georgia, serif;
+  --dyo-heading: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  --dyo-body: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 html { scroll-behavior: smooth; }
@@ -46,25 +48,25 @@ button { color: inherit; font: inherit; cursor: pointer; }
 .bar nav a[href="#nou"] { color: var(--accent); font-weight: 700; }
 .bar nav a:hover { text-decoration: underline; text-underline-offset: .25em; }
 
-main, .footer { font-family: var(--brand-font); }
-.intro { position: relative; overflow: hidden; background: #000; color: #fff; padding-bottom: clamp(46px, 7vw, 105px); }
+main, .footer, .download-dialog { font-family: var(--dyo-body); }
+.intro { position: relative; overflow: hidden; background: #000; color: #fff; padding-bottom: clamp(46px, 7vw, 105px); font-family: var(--potetos-font); }
 .intro-inner { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr); align-items: center; }
 .intro-copy { position: relative; isolation: isolate; padding: clamp(28px, 6vw, 88px) clamp(12px, 4vw, 64px); }
 .intro-copy::before { content: ""; position: absolute; z-index: -1; inset: 0; background: url("logo.png") no-repeat 94% 50% / auto 92%; opacity: .18; }
 .intro .eyebrow, .intro .archive-size { color: #fff; }
 .intro .primary { color: var(--ink); }
 .eyebrow { margin: 0 0 16px; color: var(--muted); font-size: .9375rem; font-weight: 600; }
-h1, h2 { margin: 0; font-family: var(--brand-font); font-weight: 400; }
+h1, h2 { margin: 0; font-weight: 400; }
 h1 { font-size: clamp(3.4rem, 7vw, 6.8rem); line-height: 1; }
-h2 { font-size: clamp(2.25rem, 4vw, 3.5rem); line-height: 1.12; }
+h2 { font-family: var(--dyo-heading); font-size: clamp(2.25rem, 4vw, 3.5rem); line-height: 1.12; }
 .cover { display: block; width: 100%; height: clamp(400px, 47vw, 590px); object-fit: contain; }
-.intro-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: 26px; }
-.intro-favorites { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; font-size: .875rem; }
-.intro-favorites > * { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0; border: 0; background: transparent; }
-.intro-favorites > :hover { text-decoration: underline; text-underline-offset: 4px; }
-.intro-favorites [data-favorite-count] { color: var(--accent); font-weight: 700; }
+.intro-actions { display: flex; flex-direction: column; gap: 8px; width: max-content; max-width: 100%; margin-top: 26px; }
+.intro-favorites { display: flex; flex-direction: column; }
+.intro-favorites .button { gap: 7px; }
+.intro-favorites a { display: grid; place-items: center; min-height: 44px; font-size: .875rem; }
+.intro-favorites a:hover { text-decoration: underline; text-underline-offset: 4px; }
 .button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 9px 15px; border: 1px solid var(--line); border-radius: 4px; font-size: .875rem; font-weight: 700; }
-main .button, .intro .eyebrow { font-weight: 400; font-size: 1rem; }
+.intro .button, .intro .eyebrow { font-weight: 400; font-size: 1rem; }
 .button:hover { background: #f0ece2; }
 .primary { background: var(--accent); border-color: transparent; }
 .primary:hover { background: #edcc38; }
