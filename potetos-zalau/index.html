@@ -6,9 +6,9 @@
   <meta name="robots" content="noindex, nofollow">
   <meta name="theme-color" content="#faf9f6">
   <title>Poteto’s Zalău — Galerie de predare | DYO</title>
-  <link rel="stylesheet" href="gallery.css?v=15">
+  <link rel="stylesheet" href="gallery.css?v=16">
   <script src="videos.js" defer></script>
-  <script src="gallery.js?v=13" defer></script>
+  <script src="gallery.js?v=14" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -1173,7 +1173,6 @@
     <div class="lightbox-bar">
       <button type="button" class="favorite-toggle" id="lightbox-favorite" aria-pressed="false" aria-label="Adaugă la favorite">♡</button>
       <span id="position" aria-live="polite"></span>
-      <a class="photo-download" id="single-download" aria-label="Descarcă fotografia" title="Descarcă fotografia" download></a>
       <button type="button" id="close" aria-label="Închide">×</button>
     </div>
     <div class="lightbox-stage">
@@ -1184,7 +1183,10 @@
           <div class="lightbox-slide slide-current">
             <div class="lightbox-image-inner">
               <img id="large-photo" alt="" draggable="false">
-              <button type="button" class="favorite-toggle" id="stage-favorite" aria-pressed="false" aria-label="Adaugă la favorite">♡</button>
+              <div class="lightbox-photo-actions">
+                <a class="photo-download" id="single-download" aria-label="Descarcă fotografia" title="Descarcă fotografia" download></a>
+                <button type="button" class="favorite-toggle" id="stage-favorite" aria-pressed="false" aria-label="Adaugă la favorite">♡</button>
+              </div>
             </div>
           </div>
           <div class="lightbox-slide slide-after" aria-hidden="true"><img alt="" draggable="false"></div>
@@ -1192,8 +1194,10 @@
       </div>
       <button type="button" id="next" aria-label="Fotografia următoare">›</button>
     </div>
+    <p id="lightbox-save-status" class="save-feedback" role="status"></p>
     <nav class="filmstrip" id="filmstrip" aria-label="Fotografii din apropiere"></nav>
   </dialog>
+  <p id="page-save-status" class="save-feedback" role="status"></p>
   <dialog id="downloads" class="download-dialog" aria-labelledby="downloads-title">
     <header class="downloads-head">
       <h2 id="downloads-title">Descărcări</h2>

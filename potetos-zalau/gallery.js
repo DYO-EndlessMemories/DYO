@@ -187,6 +187,7 @@ function showPhoto(index) {
   singleDownload.download = photoFile(card).name;
   for (const button of lightboxFavorites) renderFavorite(button, card.dataset.original);
   updateFilmstrip();
+  if (usesIOS && hasNativePhotoShare()) scheduleOriginal(photoFile(card));
 }
 
 function settleSlide(direction, offset = 0) {
@@ -217,7 +218,7 @@ dialog.addEventListener("keydown", event => {
   }
 });
 viewer.addEventListener("pointerdown", event => {
-  if (!event.isPrimary || event.pointerType === "mouse" || event.target.closest("button") || slideTimer || cards.length < 2) return;
+  if (!event.isPrimary || event.pointerType === "mouse" || event.target.closest("button, a") || slideTimer || cards.length < 2) return;
   gesture = { id: event.pointerId, x: event.clientX, y: event.clientY, time: event.timeStamp, offset: 0, dragging: false };
 });
 viewer.addEventListener("pointermove", event => {
@@ -251,12 +252,16 @@ function endSwipe(event) {
 }
 viewer.addEventListener("pointerup", endSwipe);
 viewer.addEventListener("pointercancel", endSwipe);
-viewer.addEventListener("lostpointercapture", endSwipe);
+viewer.addEventListener("lostpointercapture", event => {
+  if (event.target === viewer) endSwipe(event);
+});
 dialog.addEventListener("click", event => {
   if ((event.target === stage || event.target === dialog || event.target.matches(".lightbox-image, .lightbox-slide")) && performance.now() > suppressClickUntil) dialog.close();
 });
 dialog.addEventListener("close", () => {
   clearTimeout(filmstripTimer);
+  clearTimeout(originalTimer);
+  if (!singleSaving) forgetOriginal();
   resetTrack();
   gesture = null;
   suppressClickUntil = 0;
@@ -384,12 +389,13 @@ function setupGallery(section) {
 
   const toggle = section.querySelector(".gallery-toggle");
   const collapse = section.querySelector(".collapse-gallery");
-  const extraCards = [...grid.children];
+  const sampleCards = customPreview ? [] : [...sample.children];
+  const fullGridCards = [...sampleCards, ...grid.children];
   const shown = new Set([...sample.children].map(card => card.dataset.original));
   const teaser = document.createElement("div");
   teaser.className = "gallery-teaser sample-grid";
   teaser.setAttribute("aria-hidden", "true");
-  for (const card of extraCards.filter(card => !shown.has(card.dataset.original)).slice(0, 4)) {
+  for (const card of fullGridCards.filter(card => !shown.has(card.dataset.original)).slice(0, 4)) {
     const thumb = card.querySelector("img").cloneNode();
     thumb.alt = "";
     teaser.append(thumb);
@@ -398,7 +404,7 @@ function setupGallery(section) {
   more.className = "gallery-more";
   more.append(teaser, toggle);
   sample.after(more);
-  const aspectRatios = extraCards.map(card => {
+  const aspectRatios = fullGridCards.map(card => {
     const img = card.querySelector("img");
     return Number(img.getAttribute("width")) / Number(img.getAttribute("height"));
   });
@@ -413,15 +419,25 @@ function setupGallery(section) {
     grid.classList.toggle("is-masonry", mobileLayout.matches);
     grid.classList.toggle("is-justified", !mobileLayout.matches);
     if (mobileLayout.matches) {
-      applyMasonry(extraCards, aspectRatios, width, gap);
+      applyMasonry(fullGridCards, aspectRatios, width, gap);
     } else {
-      applyJustified(extraCards, aspectRatios, width, gap);
+      applyJustified(fullGridCards, aspectRatios, width, gap);
     }
   }
 
   function setExpanded(expanded) {
     rest.hidden = !expanded;
-    if (customPreview) sample.hidden = expanded;
+    sample.hidden = expanded;
+    if (expanded) {
+      grid.prepend(...sampleCards);
+    } else {
+      for (const card of sampleCards) {
+        card.style.width = "";
+        card.style.gridArea = "";
+      }
+      sample.append(...sampleCards);
+      lastWidth = 0;
+    }
     teaser.hidden = expanded;
     more.classList.toggle("is-expanded", expanded);
     toggle.setAttribute("aria-expanded", String(expanded));
@@ -579,6 +595,10 @@ const shareBatchSize = 4;
 const originalRelease = "https://github.com/DYO-EndlessMemories/DYO/releases/download/potetos-zalau-materiale/";
 const originalMedia = "https://raw.githubusercontent.com/DYO-EndlessMemories/DYO/ddac8dc0fb401b00941dbacaf065b37e2bbf5343/";
 let photoSession;
+let singleOriginal;
+let originalTimer;
+let singleSaving = false;
+let saveFeedbackTimer;
 
 function originalShareUrl(file) {
   if (file.href.startsWith(originalRelease)) {
@@ -590,7 +610,74 @@ function originalShareUrl(file) {
 function openSinglePhoto(event, file) {
   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
   event.preventDefault();
-  openPhotos([file], true);
+  shareSinglePhoto(file);
+}
+
+function forgetOriginal() {
+  singleOriginal?.controller.abort();
+  singleOriginal = null;
+}
+
+function prepareOriginal(file) {
+  if (singleOriginal?.href === file.href) return singleOriginal;
+  forgetOriginal();
+  const controller = new AbortController();
+  const entry = { href: file.href, controller };
+  entry.pending = readOriginal(file, controller.signal).then(original => {
+    entry.payload = { files: [original] };
+    return entry.payload;
+  }).catch(() => {
+    if (singleOriginal === entry) singleOriginal = null;
+    return null;
+  });
+  singleOriginal = entry;
+  return entry;
+}
+
+function scheduleOriginal(file) {
+  clearTimeout(originalTimer);
+  originalTimer = setTimeout(() => {
+    if (dialog.open && !singleSaving) prepareOriginal(file);
+  }, 240);
+}
+
+function showSaveFeedback(text, persistent = false) {
+  clearTimeout(saveFeedbackTimer);
+  const message = document.querySelector(dialog.open ? "#lightbox-save-status" : "#page-save-status");
+  const other = document.querySelector(dialog.open ? "#page-save-status" : "#lightbox-save-status");
+  other.textContent = "";
+  message.textContent = text;
+  if (text && !persistent) saveFeedbackTimer = setTimeout(() => { message.textContent = ""; }, 4500);
+}
+
+async function shareSinglePhoto(file) {
+  if (singleSaving) return;
+  if (!hasNativePhotoShare()) {
+    openPhotos([file]);
+    return;
+  }
+  singleSaving = true;
+  try {
+    const entry = prepareOriginal(file);
+    if (!entry.payload) showSaveFeedback("Se încarcă fotografia originală…", true);
+    const payload = entry.payload || await entry.pending;
+    if (!payload || !navigator.canShare(payload)) {
+      showSaveFeedback("Originalul nu s-a încărcat pentru salvare. Încearcă din nou.");
+      return;
+    }
+    if (navigator.userActivation?.isActive === false) {
+      showSaveFeedback("Fotografia e gata. Apasă din nou săgeata de descărcare.");
+      return;
+    }
+    showSaveFeedback("");
+    await navigator.share(payload);
+  } catch (error) {
+    if (error.name !== "AbortError") {
+      showSaveFeedback("Meniul de salvare nu s-a deschis. Apasă din nou săgeata de descărcare.");
+    }
+  } finally {
+    singleSaving = false;
+  }
 }
 
 function individualPhotoGroups(files) {
@@ -803,7 +890,7 @@ if (usesIOS) {
     const card = previewCard(event.target);
     if (!card) return;
     event.preventDefault();
-    if (!photosDialog.open) openPressedPhoto(card);
+    if (press && !gesture?.dragging && !photosDialog.open) openPressedPhoto(card);
   });
   document.addEventListener("click", event => {
     if (!preventPreviewClick || !previewCard(event.target)) return;
