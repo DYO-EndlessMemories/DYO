@@ -5,11 +5,17 @@ const largePhoto = document.querySelector("#large-photo");
 const position = document.querySelector("#position");
 const singleDownload = document.querySelector("#single-download");
 const stage = dialog.querySelector(".lightbox-stage");
+const viewer = stage.querySelector(".lightbox-image");
+const track = viewer.querySelector(".lightbox-track");
+const beforePhoto = track.querySelector(".slide-before img");
+const afterPhoto = track.querySelector(".slide-after img");
 const filmstrip = document.querySelector("#filmstrip");
 const lightboxFavorites = [document.querySelector("#lightbox-favorite"), document.querySelector("#stage-favorite")];
 const mobileLayout = matchMedia("(max-width: 700px)");
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 let current = 0;
 let gesture = null;
+let slideTimer;
 let suppressClickUntil = 0;
 let filmstripCards;
 let filmstripTimer;
@@ -128,7 +134,7 @@ function updateFilmstrip() {
 filmstrip.addEventListener("scroll", () => {
   clearTimeout(filmstripTimer);
   filmstripTimer = setTimeout(() => {
-    if (!dialog.open || !filmstrip.children.length) return;
+    if (!dialog.open || !filmstrip.children.length || gesture?.dragging || slideTimer) return;
     const center = filmstrip.scrollLeft + filmstrip.clientWidth / 2;
     let closest = current;
     let distance = Infinity;
@@ -143,10 +149,31 @@ filmstrip.addEventListener("scroll", () => {
   }, 120);
 }, { passive: true });
 
+function wrapIndex(index) {
+  return (index + cards.length) % cards.length;
+}
+
+function setTrackOffset(offset) {
+  track.style.transform = offset ? `translate3d(${offset}px, 0, 0)` : "";
+}
+
+function resetTrack() {
+  clearTimeout(slideTimer);
+  slideTimer = null;
+  track.style.transition = "";
+  setTrackOffset(0);
+}
+
 function showPhoto(index) {
-  current = (index + cards.length) % cards.length;
+  resetTrack();
+  current = wrapIndex(index);
   const card = cards[current];
   largePhoto.src = card.querySelector("img").src;
+  beforePhoto.hidden = afterPhoto.hidden = cards.length < 2;
+  if (cards.length > 1) {
+    beforePhoto.src = cards[wrapIndex(current - 1)].querySelector("img").src;
+    afterPhoto.src = cards[wrapIndex(current + 1)].querySelector("img").src;
+  }
   largePhoto.alt = `${activeTitle} · ${current + 1} / ${cards.length}`;
   position.textContent = `${current + 1} / ${cards.length}`;
   singleDownload.href = card.dataset.original;
@@ -154,37 +181,76 @@ function showPhoto(index) {
   for (const button of lightboxFavorites) renderFavorite(button, card.dataset.original);
   updateFilmstrip();
 }
+
+function settleSlide(direction, offset = 0) {
+  if (slideTimer || cards.length < 2) return;
+  if (reducedMotion.matches) {
+    showPhoto(current + direction);
+    return;
+  }
+  const destination = -direction * (viewer.clientWidth + 12);
+  const duration = direction ? 235 : 190;
+  setTrackOffset(offset);
+  // Commit the drag position before changing the transform, even for a quick flick.
+  track.getBoundingClientRect();
+  track.style.transition = `transform ${duration}ms cubic-bezier(.2,.75,.25,1)`;
+  setTrackOffset(destination);
+  slideTimer = setTimeout(() => showPhoto(current + direction), duration + 16);
+}
 for (const button of lightboxFavorites) {
   button.addEventListener("click", () => toggleFavorite(cards[current].dataset.original));
 }
 document.querySelector("#close").addEventListener("click", () => dialog.close());
-document.querySelector("#previous").addEventListener("click", () => showPhoto(current - 1));
-document.querySelector("#next").addEventListener("click", () => showPhoto(current + 1));
+document.querySelector("#previous").addEventListener("click", () => settleSlide(-1));
+document.querySelector("#next").addEventListener("click", () => settleSlide(1));
 dialog.addEventListener("keydown", event => {
   if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
     event.preventDefault();
-    showPhoto(current + (event.key === "ArrowRight" ? 1 : -1));
+    settleSlide(event.key === "ArrowRight" ? 1 : -1);
   }
 });
-stage.addEventListener("pointerdown", event => {
-  if (!event.isPrimary || event.pointerType === "mouse" || event.target.closest("button")) return;
-  gesture = { id: event.pointerId, x: event.clientX, y: event.clientY };
+viewer.addEventListener("pointerdown", event => {
+  if (!event.isPrimary || event.pointerType === "mouse" || event.target.closest("button") || slideTimer || cards.length < 2) return;
+  gesture = { id: event.pointerId, x: event.clientX, y: event.clientY, time: event.timeStamp, offset: 0, dragging: false };
 });
-stage.addEventListener("pointerup", event => {
+viewer.addEventListener("pointermove", event => {
   if (event.pointerId !== gesture?.id) return;
   const horizontal = event.clientX - gesture.x;
-  const vertical = event.clientY - gesture.y;
-  gesture = null;
-  if (Math.abs(horizontal) < 42 || Math.abs(horizontal) < Math.abs(vertical) * 1.2) return;
-  suppressClickUntil = performance.now() + 350;
-  showPhoto(current + (horizontal < 0 ? 1 : -1));
+  const vertical = Math.abs(event.clientY - gesture.y);
+  if (!gesture.dragging) {
+    if (vertical > 12 && vertical > Math.abs(horizontal)) {
+      gesture = null;
+      return;
+    }
+    if (Math.abs(horizontal) < 8 || Math.abs(horizontal) < vertical) return;
+    gesture.dragging = true;
+    if (event.isTrusted) viewer.setPointerCapture(event.pointerId);
+  }
+  const limit = viewer.clientWidth;
+  gesture.offset = Math.max(-limit, Math.min(limit, horizontal));
+  setTrackOffset(gesture.offset);
 });
-stage.addEventListener("pointercancel", () => { gesture = null; });
+
+function endSwipe(event) {
+  if (event.pointerId !== gesture?.id) return;
+  const { offset, time, dragging } = gesture;
+  gesture = null;
+  if (!dragging) return;
+  suppressClickUntil = performance.now() + 350;
+  const distance = Math.abs(offset);
+  const flick = distance > 24 && distance / Math.max(1, event.timeStamp - time) > .4;
+  const advances = event.type === "pointerup" && (distance > Math.min(90, viewer.clientWidth * .24) || flick);
+  settleSlide(advances ? -Math.sign(offset) : 0, offset);
+}
+viewer.addEventListener("pointerup", endSwipe);
+viewer.addEventListener("pointercancel", endSwipe);
+viewer.addEventListener("lostpointercapture", endSwipe);
 dialog.addEventListener("click", event => {
-  if ((event.target === stage || event.target === dialog || event.target.matches(".lightbox-image")) && performance.now() > suppressClickUntil) dialog.close();
+  if ((event.target === stage || event.target === dialog || event.target.matches(".lightbox-image, .lightbox-slide")) && performance.now() > suppressClickUntil) dialog.close();
 });
 dialog.addEventListener("close", () => {
   clearTimeout(filmstripTimer);
+  resetTrack();
   gesture = null;
   suppressClickUntil = 0;
 });
@@ -382,6 +448,8 @@ const downloadBatch = document.querySelector("#download-batch");
 const downloadFiles = document.querySelector("#download-files");
 const downloadHelp = document.querySelector("#download-help");
 const downloadStatus = document.querySelector("#download-status");
+const iphoneImport = document.querySelector("#iphone-import");
+const usesIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const downloadFrames = new Map();
 let archiveCatalog;
 let activeDownloads = [];
@@ -443,6 +511,8 @@ async function openDownloads(key) {
     ? activeDownloads.length === 1 ? "1 fișier în format original" : `${activeDownloads.length} fișiere în format original`
     : "Apasă pe o inimă din galerie pentru a adăuga fotografii aici.";
   downloadArchive.hidden = true;
+  iphoneImport.hidden = true;
+  iphoneImport.open = usesIOS;
   const hasFiles = activeDownloads.length > 0;
   downloadBatch.hidden = !hasFiles;
   downloadHelp.hidden = !hasFiles;
@@ -473,6 +543,11 @@ async function openDownloads(key) {
   if (JSON.stringify(originals) === JSON.stringify([...archive.originals].sort())) {
     downloadArchive.href = archive.url;
     downloadArchive.hidden = false;
+    iphoneImport.hidden = false;
+    if (usesIOS) {
+      downloadBatch.hidden = true;
+      downloadHelp.hidden = true;
+    }
   }
 }
 
