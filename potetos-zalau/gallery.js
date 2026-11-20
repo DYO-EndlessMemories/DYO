@@ -61,3 +61,35 @@ if (clips.length) {
     grid.append(card);
   }
 }
+
+const photoGrid = document.querySelector(".grid");
+const photoSizes = cards.map(card => {
+  const img = card.querySelector("img");
+  return Number(img.getAttribute("height")) / Number(img.getAttribute("width"));
+});
+
+if ("ResizeObserver" in window) {
+  let lastWidth = 0;
+  const layout = () => {
+    const width = photoGrid.clientWidth;
+    if (!width || width === lastWidth) return;
+    lastWidth = width;
+    const style = getComputedStyle(photoGrid);
+    const columns = Number(style.getPropertyValue("--photo-columns"));
+    const gap = parseFloat(style.columnGap);
+    const columnWidth = (width - gap * (columns - 1)) / columns;
+    const heights = Array(columns).fill(1);
+
+    cards.forEach((card, index) => {
+      const shortest = heights.indexOf(Math.min(...heights));
+      card.style.gridColumnStart = shortest + 1;
+      card.style.gridRowStart = heights[shortest];
+      const photoHeight = Math.ceil(columnWidth * photoSizes[index]);
+      card.style.gridRowEnd = "span " + photoHeight;
+      heights[shortest] += photoHeight + gap;
+    });
+    photoGrid.classList.add("is-balanced");
+  };
+  layout();
+  new ResizeObserver(layout).observe(photoGrid);
+}

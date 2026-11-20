@@ -44,10 +44,8 @@ h1{font-size:clamp(3.5rem,8vw,7rem);line-height:.98;letter-spacing:-.055em}
 h2{font-size:clamp(2rem,4vw,3.2rem);line-height:1.05;letter-spacing:-.045em}
 .section{margin:clamp(32px,5vw,64px) 0;scroll-margin-top:24px}
 #fotografii{margin-top:12px}
-.featured{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;align-items:start;margin-bottom:5px}
 .grid{column-count:4;column-gap:5px}
 .photo{position:relative;break-inside:avoid;margin:0 0 5px}
-.featured .photo{margin:0}
 .view{display:block;width:100%;padding:0;border:0;background:var(--panel)}
 .view img{display:block;width:100%;height:auto}
 .view:focus-visible{outline-offset:-3px}
@@ -59,8 +57,29 @@ h2{font-size:clamp(2rem,4vw,3.2rem);line-height:1.05;letter-spacing:-.045em}
   .bar{min-height:72px}
   .grid{column-count:2;column-gap:3px}
   .photo{margin-bottom:3px}
-  .featured{grid-template-columns:repeat(2,minmax(0,1fr));gap:3px;margin-bottom:3px}
-  .featured .photo:first-child{grid-column:1/-1}
   .section-head{align-items:start;flex-direction:column}
   .lightbox-stage img{height:min(68vh,600px)}
 }
+
+/* The album page's warm paper palette and centered editorial title. */
+:root{color-scheme:light;--bg:#f6f2eb;--panel:#e8ded4;--text:#352a23;--dim:#64564a;--line:#dacfbe;--yellow:#8a6533;--photo-gap:6px;--photo-columns:4}
+.bar{min-height:82px}
+.brand{display:inline-flex;align-items:center;gap:12px}
+.brand img{width:46px;height:46px}
+.studio span{font-size:.72rem}
+.intro{text-align:center;border-block:1px solid var(--line);padding:clamp(34px,6vw,82px) 0}
+.client-logo{display:block;width:74px;height:68px;object-fit:contain;margin:0 auto 18px;background:#191511;border-radius:14px;padding:8px}
+.eyebrow{font-size:.76rem}
+h1{font-size:clamp(3.6rem,9vw,7.5rem)}
+#fotografii{margin-top:clamp(26px,4vw,50px)}
+.section-head{margin-bottom:18px}
+.button.outline:hover{background:var(--panel)}
+.grid{column-count:var(--photo-columns);column-gap:var(--photo-gap)}
+.photo{margin-bottom:var(--photo-gap)}
+.grid.is-balanced{display:grid;grid-template-columns:repeat(var(--photo-columns),minmax(0,1fr));grid-auto-rows:1px;column-count:auto;align-items:start}
+.grid.is-balanced .photo{margin:0}
+.view img{width:100%;height:auto}
+.download{color:#fff}
+dialog{color-scheme:dark;--bg:#12110f;--panel:#241f19;--text:#fff8ed;--dim:#c1b8a9;--line:#554a3d;--yellow:#f1ca83}
+@media(max-width:980px){.grid{--photo-columns:3}}
+@media(max-width:640px){.grid{--photo-columns:2;--photo-gap:4px}.bar{min-height:68px}.brand{gap:6px}.brand img{width:37px;height:37px}}
