@@ -382,6 +382,7 @@ const downloadBatch = document.querySelector("#download-batch");
 const downloadFiles = document.querySelector("#download-files");
 const downloadHelp = document.querySelector("#download-help");
 const downloadStatus = document.querySelector("#download-status");
+const downloadFrames = new Map();
 let archiveCatalog;
 let activeDownloads = [];
 let batchTimer;
@@ -389,6 +390,22 @@ let batchTimer;
 function setDownloadLink(link, file) {
   link.href = file.href;
   link.download = file.name;
+}
+
+function dispatchDownload(link) {
+  if (link.origin !== location.origin) {
+    // Each external attachment needs its own navigation while the server responds.
+    if (!downloadFrames.has(link.href)) {
+      const frame = document.createElement("iframe");
+      frame.name = `original-download-${downloadFrames.size}`;
+      frame.hidden = true;
+      document.body.append(frame);
+      downloadFrames.set(link.href, frame);
+    }
+    link.target = downloadFrames.get(link.href).name;
+  }
+  link.click();
+  link.removeAttribute("target");
 }
 
 downloadBatch.addEventListener("click", () => {
@@ -401,7 +418,7 @@ downloadBatch.addEventListener("click", () => {
   function dispatchNext() {
     if (!downloadDialog.open) return;
     const row = rows[next++];
-    if (row.lastElementChild.textContent === "În coadă") row.firstElementChild.click();
+    if (row.lastElementChild.textContent === "În coadă") dispatchDownload(row.firstElementChild);
     if (next < batchSize) {
       if (next === 1 || next % 20 === 0) downloadStatus.textContent = `${next} din ${batchSize} trimise browserului.`;
       batchTimer = setTimeout(dispatchNext, 150);
