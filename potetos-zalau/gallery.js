@@ -167,6 +167,19 @@ function setupGallery(section) {
   const groupCards = [...section.querySelectorAll(".photo")];
   const title = section.querySelector("h2").textContent;
   const rest = section.querySelector(".gallery-rest");
+
+  groupCards.forEach((card, index) => {
+    card.querySelector(".view").addEventListener("click", () => {
+      cards = groupCards;
+      activeTitle = title;
+      showPhoto(index);
+      dialog.showModal();
+      document.querySelector("#close").focus();
+    });
+  });
+
+  if (!rest) return;
+
   const toggle = section.querySelector(".gallery-toggle");
   const collapse = section.querySelector(".collapse-gallery");
   const grid = rest.querySelector(".grid");
@@ -208,16 +221,6 @@ function setupGallery(section) {
     setExpanded(false);
     toggle.focus({ preventScroll: true });
     section.scrollIntoView({ block: "start" });
-  });
-
-  groupCards.forEach((card, index) => {
-    card.querySelector(".view").addEventListener("click", () => {
-      cards = groupCards;
-      activeTitle = title;
-      showPhoto(index);
-      dialog.showModal();
-      document.querySelector("#close").focus();
-    });
   });
 
   if ("ResizeObserver" in window) {
