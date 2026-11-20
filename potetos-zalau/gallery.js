@@ -43,7 +43,9 @@ function renderFavorite(button, key) {
 function updateFavorites() {
   const selected = [...collections.values()].flatMap(collection => collection.cards)
     .filter(card => favorites.has(card.dataset.original));
-  document.querySelector("[data-favorite-count]").textContent = selected.length;
+  for (const count of document.querySelectorAll("[data-favorite-count]")) {
+    count.textContent = selected.length;
+  }
   document.querySelector("#favorite-empty").hidden = selected.length > 0;
   document.querySelector("#favorite-download-all").hidden = selected.length === 0;
 
@@ -469,6 +471,7 @@ const downloadDialog = document.querySelector("#downloads");
 const downloadTitle = document.querySelector("#downloads-title");
 const downloadCount = document.querySelector("#downloads-count");
 const downloadArchive = document.querySelector("#download-archive");
+const downloadFavoriteZip = document.querySelector("#download-favorite-zip");
 const downloadBatch = document.querySelector("#download-batch");
 const downloadPhotos = document.querySelector("#download-photos");
 const downloadPhotosHelp = document.querySelector("#download-photos-help");
@@ -480,6 +483,9 @@ const downloadFrames = new Map();
 let archiveCatalog;
 let activeDownloads = [];
 let batchTimer;
+let favoriteZipController;
+let favoriteZipUrl;
+let favoriteZipStarted = false;
 
 function setDownloadLink(link, file) {
   link.href = file.href;
@@ -531,10 +537,64 @@ downloadBatch.addEventListener("click", () => {
 
   dispatchNext();
 });
-downloadDialog.addEventListener("close", () => clearTimeout(batchTimer));
+function resetFavoriteZip() {
+  favoriteZipController?.abort();
+  favoriteZipController = null;
+  if (favoriteZipUrl) {
+    const url = favoriteZipUrl;
+    if (favoriteZipStarted) setTimeout(() => URL.revokeObjectURL(url), 60000);
+    else URL.revokeObjectURL(url);
+    favoriteZipUrl = null;
+  }
+  favoriteZipStarted = false;
+}
+
+downloadDialog.addEventListener("close", () => {
+  if (downloadDialog.open) return;
+  clearTimeout(batchTimer);
+  resetFavoriteZip();
+});
+
+downloadArchive.addEventListener("click", () => {
+  if (favoriteZipUrl) favoriteZipStarted = true;
+});
+
+downloadFavoriteZip.addEventListener("click", async () => {
+  if (downloadFavoriteZip.disabled) return;
+  const files = activeDownloads;
+  const controller = new AbortController();
+  favoriteZipController = controller;
+  downloadFavoriteZip.disabled = true;
+  downloadStatus.textContent = "Se pregătește arhiva ZIP…";
+  try {
+    const { makePhotoZip } = await import("./favorite-zip.js?v=1");
+    const archive = await makePhotoZip(files, readOriginal, controller.signal, done => {
+      if (!controller.signal.aborted) downloadStatus.textContent = done + " din " + files.length + " fotografii pregătite pentru ZIP.";
+    });
+    if (controller.signal.aborted || !downloadDialog.open) return;
+    favoriteZipUrl = URL.createObjectURL(archive);
+    setDownloadLink(downloadArchive, { href: favoriteZipUrl, name: "Potetos-Favorite.zip" });
+    downloadFavoriteZip.hidden = true;
+    downloadArchive.hidden = false;
+    if (navigator.userActivation?.isActive) {
+      downloadStatus.textContent = "Arhiva ZIP este gata.";
+      downloadArchive.click();
+    } else {
+      downloadStatus.textContent = "Arhiva este gata. Apasă „Descarcă ZIP”.";
+    }
+  } catch {
+    if (!controller.signal.aborted) downloadStatus.textContent = "Arhiva ZIP nu s-a putut pregăti. Încearcă din nou.";
+  } finally {
+    if (favoriteZipController === controller) {
+      downloadFavoriteZip.disabled = false;
+      favoriteZipController = null;
+    }
+  }
+});
 downloadPhotos.addEventListener("click", () => openPhotos(activeDownloads));
 
 async function openDownloads(key) {
+  resetFavoriteZip();
   const allCards = [...collections.values()].flatMap(collection => collection.cards);
   const collection = key === "all" ? { title: "Toate galeriile", cards: allCards }
     : key === "favorites" ? { title: "Favorite", cards: allCards.filter(card => favorites.has(card.dataset.original)) }
@@ -546,10 +606,15 @@ async function openDownloads(key) {
     ? activeDownloads.length === 1 ? "1 fișier în format original" : `${activeDownloads.length} fișiere în format original`
     : "Apasă pe o inimă din galerie pentru a adăuga fotografii aici.";
   downloadArchive.hidden = true;
+  downloadArchive.removeAttribute("download");
   zipHelp.hidden = true;
   zipHelp.open = false;
   const hasFiles = activeDownloads.length > 0;
-  downloadBatch.hidden = !hasFiles;
+  const favoritesDownload = key === "favorites";
+  downloadFavoriteZip.hidden = !favoritesDownload || !hasFiles;
+  downloadFavoriteZip.disabled = false;
+  downloadBatch.hidden = !hasFiles || favoritesDownload;
+  if (favoritesDownload && hasFiles) zipHelp.hidden = false;
   const androidShare = usesAndroid && hasNativePhotoShare();
   downloadPhotos.hidden = !hasFiles || !(usesIOS || androidShare);
   downloadPhotos.textContent = usesIOS ? "Salvează în Poze" : "Partajează fotografiile";
@@ -557,7 +622,7 @@ async function openDownloads(key) {
     ? "Salvează originalele din meniul iPhone-ului."
     : "Destinațiile disponibile apar în meniul de partajare al telefonului.";
   downloadPhotosHelp.hidden = downloadPhotos.hidden;
-  downloadHelp.hidden = !hasFiles;
+  downloadHelp.hidden = !hasFiles || favoritesDownload;
   downloadStatus.textContent = "";
   downloadBatch.disabled = false;
   downloadBatch.textContent = activeDownloads.every(file => /\.jpe?g$/i.test(file.name))
