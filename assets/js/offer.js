@@ -1,6 +1,6 @@
 ﻿/**
  * DYO — Albume Absolvenți (Promoția 2027)
- * Justified gallery + shuffle + scroll-linked D/Y/O → package highlight
+ * Masonry gallery + shuffle + scroll-linked D/Y/O → package highlight
  * + inquiry modal (WhatsApp / e-mail)
  */
 (function () {
@@ -20,123 +20,42 @@
     return a;
   }
 
-  // ---- Justified-row gallery (dependency-free) --------------------------------
+  // ---- Masonry gallery (CSS columns + shuffle) -------------------------------
 
-  function JustifiedGallery(el, items, options) {
+  function MasonryGallery(el, items) {
     this.el = el;
-    this.items = items;
-    this.targetRowHeight = (options && options.targetRowHeight) || 240;
-    this.gap = (options && options.gap) || 8;
-    this.maxRowHeight = (options && options.maxRowHeight) || 320;
-    this._ro = null;
+    this.items = items || [];
   }
 
-  JustifiedGallery.prototype.setItems = function (items) {
-    this.items = items;
+  MasonryGallery.prototype.setItems = function (items) {
+    this.items = items || [];
     this.render();
   };
 
-  JustifiedGallery.prototype.render = function () {
-    var width = Math.floor(this.el.clientWidth || this.el.getBoundingClientRect().width);
-    if (width < 40) return;
-    var rows = this._buildRows(width);
+  MasonryGallery.prototype.render = function () {
     var html = "";
-    for (var r = 0; r < rows.length; r++) {
-      var row = rows[r];
-      var h = row.height;
-      var gap = this.gap;
-      var widths = [];
-      var used = gap * Math.max(0, row.items.length - 1);
-      for (var i = 0; i < row.items.length; i++) {
-        var w = Math.floor(h * (row.items[i].width / row.items[i].height));
-        widths.push(w);
-        used += w;
-      }
-      // Absorb rounding error into the last item so the row never overflows
-      if (widths.length) {
-        widths[widths.length - 1] = Math.max(24, widths[widths.length - 1] + (width - used));
-      }
-      html += '<div class="justified-row" style="height:' + h + 'px">';
-      for (var j = 0; j < row.items.length; j++) {
-        var it = row.items[j];
-        var ar = it.width / it.height;
-        html +=
-          '<figure class="justified-item" style="--row-h:' +
-          h +
-          "px;--ar:" +
-          ar +
-          ";width:" +
-          widths[j] +
-          'px;height:' +
-          h +
-          'px">' +
-          '<img src="' +
-          it.src +
-          '" alt="' +
-          (it.alt || "DYO") +
-          '" width="' +
-          it.width +
-          '" height="' +
-          it.height +
-          '" loading="lazy" decoding="async" />' +
-          "</figure>";
-      }
-      html += "</div>";
+    for (var i = 0; i < this.items.length; i++) {
+      var it = this.items[i];
+      html +=
+        '<figure class="masonry-item" role="listitem">' +
+        '<img src="' +
+        it.src +
+        '" alt="' +
+        (it.alt || "DYO") +
+        '" width="' +
+        (it.width || "") +
+        '" height="' +
+        (it.height || "") +
+        '" loading="lazy" decoding="async" />' +
+        "</figure>";
     }
     this.el.innerHTML = html;
   };
 
-  JustifiedGallery.prototype._buildRows = function (containerWidth) {
-    var rows = [];
-    var pending = [];
-    var aspectSum = 0;
-    var target = this.targetRowHeight;
-    var gap = this.gap;
-
-    for (var i = 0; i < this.items.length; i++) {
-      var item = this.items[i];
-      var ar = item.width / item.height;
-      pending.push(item);
-      aspectSum += ar;
-
-      var gaps = gap * (pending.length - 1);
-      var rowWidthAtTarget = aspectSum * target + gaps;
-
-      if (rowWidthAtTarget >= containerWidth && pending.length > 0) {
-        var h = (containerWidth - gaps) / aspectSum;
-        if (h > this.maxRowHeight) h = this.maxRowHeight;
-        rows.push({ items: pending, height: Math.floor(h) });
-        pending = [];
-        aspectSum = 0;
-      }
-    }
-
-    if (pending.length) {
-      var gapsLast = gap * Math.max(0, pending.length - 1);
-      var hLast = Math.min(target, (containerWidth - gapsLast) / aspectSum);
-      rows.push({ items: pending, height: Math.floor(hLast) });
-    }
-    return rows;
-  };
-
-  JustifiedGallery.prototype.mount = function () {
-    var self = this;
+  MasonryGallery.prototype.mount = function () {
     this.render();
-    if (typeof ResizeObserver !== "undefined") {
-      var t = null;
-      this._ro = new ResizeObserver(function () {
-        if (t) cancelAnimationFrame(t);
-        t = requestAnimationFrame(function () {
-          self.render();
-        });
-      });
-      this._ro.observe(this.el);
-    } else {
-      window.addEventListener("resize", function () {
-        self.render();
-      });
-    }
   };
+
 
   // ---- Scroll: decorative letters ↔ package cards -----------------------------
 
@@ -236,13 +155,6 @@
 
   var galleryInstance = null;
 
-  function galleryOptions() {
-    return {
-      targetRowHeight: window.innerWidth < 640 ? 160 : 220,
-      gap: 8,
-      maxRowHeight: 280
-    };
-  }
 
   function reshuffleGallery() {
     if (!galleryInstance) return;
@@ -263,7 +175,7 @@
     var mount = document.getElementById("offer-gallery");
     if (!mount) return;
     OFFER_GALLERY = items || [];
-    galleryInstance = new JustifiedGallery(mount, shuffle(OFFER_GALLERY), galleryOptions());
+    galleryInstance = new MasonryGallery(mount, shuffle(OFFER_GALLERY));
     galleryInstance.mount();
     bindGalleryControls();
   }
