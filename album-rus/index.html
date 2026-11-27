@@ -43,7 +43,8 @@
       box-shadow: 0 16px 42px #5b4a3e16; max-width: 1050px;
     }
     .book { position: relative; width: min(100%, 168svh); isolation: isolate; }
-    .page-open { position: relative; display: block; padding: 0; border: 0; width: 100%; background: #ede5da; cursor: zoom-in; touch-action: pan-y; overflow: hidden; }
+    .page-open { position: relative; display: block; padding: 0; border: 0; width: 100%; background: #ede5da; cursor: grab; touch-action: pan-y pinch-zoom; user-select: none; overflow: hidden; }
+    .page-open.is-dragging { cursor: grabbing; }
     .page-open img { display: block; width: 100%; height: auto; }
     .album-turn {
       position: absolute; inset: 0; visibility: hidden; pointer-events: none;
@@ -90,21 +91,6 @@
       background: linear-gradient(to right, transparent, #2e1e1325 48%, #fff5e72c 51%, transparent);
     }
     .page-open:has(.is-active)::after { opacity: 0; }
-    .corner {
-      position: absolute; bottom: 0; width: 46px; height: 46px; padding: 0;
-      border: 0; background: transparent; touch-action: none; cursor: grab;
-    }
-    .corner:active { cursor: grabbing; }
-    .corner:disabled { visibility: hidden; }
-    .corner::after {
-      content: ""; display: block; position: absolute; inset: auto 0 0 auto; width: 28px; height: 28px;
-      clip-path: polygon(100% 0, 100% 100%, 0 100%);
-      background: linear-gradient(135deg, #9e7953, #fff7e9 58%, #c4a684);
-      opacity: .9;
-    }
-    .corner-left { left: 0; transform: scaleX(-1); }
-    .corner-right { right: 0; }
-    .book:has(.is-active) .corner::after { opacity: 0; }
     .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; gap: 6px; max-width: 1050px; margin: 16px auto; }
     .controls button, .toolbar button {
       min-height: 44px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 4px;
@@ -150,7 +136,7 @@
       <div class="frame">
         <div class="book" id="book">
           <button class="page-open" id="page-open" type="button" aria-label="Deschide pagina pe tot ecranul">
-            <img id="page-image" src="pagini/01.webp" width="2400" height="970" alt="Pagina 1 din album">
+            <img id="page-image" draggable="false" src="pagini/01.webp" width="2400" height="970" alt="Pagina 1 din album">
             <span class="album-turn" id="album-turn" aria-hidden="true">
               <span class="album-half album-left" id="album-left"></span>
               <span class="album-half album-right" id="album-right"></span>
@@ -160,8 +146,6 @@
               </span>
             </span>
           </button>
-          <button class="corner corner-left" id="corner-prev" type="button" aria-label="Întoarce fila spre pagina anterioară" disabled></button>
-          <button class="corner corner-right" id="corner-next" type="button" aria-label="Întoarce fila spre pagina următoare"></button>
         </div>
       </div>
       <nav class="controls" aria-label="Răsfoiește albumul">
@@ -169,7 +153,7 @@
         <output id="counter" aria-live="polite">Pagina 1 / 6</output>
         <button id="next" type="button">Înainte →</button>
       </nav>
-      <p class="turn-hint">Trage de colțul de jos spre cotor ca să întorci fila.</p>
+      <p class="turn-hint">Glisează pe album ca să răsfoiești. Atinge pagina pentru detalii.</p>
       <nav class="thumbnails" id="thumbnails" aria-label="Alege o pagină"></nav>
     </section>
   </main>
@@ -199,8 +183,6 @@
     const zoomButton = document.querySelector('#zoom');
     const thumbnails = document.querySelector('#thumbnails');
     let current = 0;
-    let touchStart;
-    let lastSwipe = 0;
     let turnPage = index => showPage(index);
 
     const buttons = pages.map((page, index) => {
@@ -235,8 +217,6 @@
       pageOpen.setAttribute('aria-label', 'Deschide pagina ' + (current + 1) + ' pe tot ecranul');
       previous.disabled = viewerPrevious.disabled = current === 0;
       next.disabled = viewerNext.disabled = current === pages.length - 1;
-      document.querySelector('#corner-prev').disabled = previous.disabled;
-      document.querySelector('#corner-next').disabled = next.disabled;
       buttons.forEach((button, i) => {
         if (i === current) button.setAttribute('aria-current', 'page');
         else button.removeAttribute('aria-current');
@@ -253,7 +233,6 @@
     viewerPrevious.addEventListener('click', () => showPage(current - 1));
     viewerNext.addEventListener('click', () => showPage(current + 1));
     pageOpen.addEventListener('click', () => {
-      if (performance.now() - lastSwipe < 350 && lastSwipe !== 0) return;
       viewer.showModal();
       showPage(current);
     });
@@ -266,23 +245,8 @@
       event.preventDefault();
       turnPage(current + (event.key === 'ArrowLeft' ? -1 : 1));
     });
-    pageOpen.addEventListener('touchstart', event => {
-      const touch = event.touches[0];
-      touchStart = event.touches.length === 1 ? {x: touch.clientX, y: touch.clientY} : undefined;
-    }, {passive: true});
-    pageOpen.addEventListener('touchend', event => {
-      if (!touchStart) return;
-      const touch = event.changedTouches[0];
-      const dx = touch.clientX - touchStart.x;
-      const dy = touch.clientY - touchStart.y;
-      touchStart = undefined;
-      if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-      lastSwipe = performance.now();
-      turnPage(current + (dx < 0 ? 1 : -1));
-    }, {passive: true});
-    pageOpen.addEventListener('touchcancel', () => { touchStart = undefined; });
     showPage(0);
   </script>
-  <script src="page-turn.js?v=2"></script>
+  <script src="page-turn.js?v=3"></script>
 </body>
 </html>

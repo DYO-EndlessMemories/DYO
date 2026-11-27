@@ -11,6 +11,8 @@
     return spread;
   });
   let turn;
+  let gesture;
+  let suppressClick = false;
   let frame = 0;
 
   function paint(progress) {
@@ -78,41 +80,58 @@
     settle(true);
   };
 
-  for (const [id, direction] of [['#corner-prev', -1], ['#corner-next', 1]]) {
-    const handle = document.querySelector(id);
-    handle.addEventListener('pointerdown', event => {
-      if (!event.isPrimary || event.button !== 0 || turn || handle.disabled) return;
-      if (reducedMotion.matches) return;
-      start(current + direction);
-      turn.pointer = {id: event.pointerId, x: event.clientX, y: event.clientY};
-      handle.setPointerCapture(event.pointerId);
-      paint(.04);
-    });
-    handle.addEventListener('pointermove', event => {
-      if (turn?.pointer?.id !== event.pointerId) return;
-      const distance = (turn.pointer.x - event.clientX) * direction;
-      const projected = Math.max(-1, Math.min(1, 1 - distance / turn.halfWidth));
-      paint(Math.acos(projected) / Math.PI);
-    });
-    handle.addEventListener('pointerup', event => {
-      if (turn?.pointer?.id !== event.pointerId) return;
-      const dx = event.clientX - turn.pointer.x;
-      const dy = event.clientY - turn.pointer.y;
-      const tapped = Math.hypot(dx, dy) < 9;
-      turn.pointer = undefined;
-      settle(tapped || -dx * direction >= turn.halfWidth * .85);
-    });
-    function cancelPointer(event) {
-      if (turn?.pointer?.id !== event.pointerId) return;
-      turn.pointer = undefined;
-      settle(false);
+  pageOpen.addEventListener('pointerdown', event => {
+    if (!event.isPrimary || event.button !== 0) return;
+    suppressClick = false;
+    if (turn) return;
+    gesture = {id: event.pointerId, x: event.clientX, y: event.clientY, dragged: false};
+  });
+
+  pageOpen.addEventListener('pointermove', event => {
+    if (gesture?.id !== event.pointerId) return;
+    const dx = event.clientX - gesture.x;
+    const dy = event.clientY - gesture.y;
+    if (!gesture.dragged) {
+      if (Math.abs(dx) < 9 || Math.abs(dx) <= Math.abs(dy)) return;
+      gesture.dragged = true;
+      suppressClick = true;
+      pageOpen.setPointerCapture(event.pointerId);
+      pageOpen.classList.add('is-dragging');
     }
-    handle.addEventListener('pointercancel', cancelPointer);
-    handle.addEventListener('lostpointercapture', cancelPointer);
-    handle.addEventListener('click', event => {
-      if (event.detail === 0 || reducedMotion.matches) turnPage(current + direction);
-    });
+
+    const direction = dx < 0 ? 1 : -1;
+    const index = current + direction;
+    if (!turn && !reducedMotion.matches && index >= 0 && index < pages.length) start(index);
+    if (!turn) return;
+    const projected = Math.max(-1, Math.min(1, 1 + dx * turn.direction / turn.halfWidth));
+    paint(Math.acos(projected) / Math.PI);
+  });
+
+  function endGesture(event) {
+    if (gesture?.id !== event.pointerId) return;
+    const {x, dragged} = gesture;
+    gesture = undefined;
+    pageOpen.classList.remove('is-dragging');
+    if (!dragged) return;
+    const dx = event.clientX - x;
+    const distance = Math.min(85, Math.max(32, pageOpen.getBoundingClientRect().width * .14));
+    const released = event.type === 'pointerup';
+    if (turn) {
+      settle(released && -dx * turn.direction >= distance);
+    } else if (released && reducedMotion.matches && Math.abs(dx) >= distance) {
+      turnPage(current + (dx < 0 ? 1 : -1));
+    }
   }
+
+  pageOpen.addEventListener('pointerup', endGesture);
+  pageOpen.addEventListener('pointercancel', endGesture);
+  pageOpen.addEventListener('lostpointercapture', endGesture);
+  pageOpen.addEventListener('dragstart', event => event.preventDefault());
+  pageOpen.addEventListener('click', event => {
+    if (!suppressClick || event.detail === 0) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }, true);
 
   pageOpen.addEventListener('click', () => {
     if (viewer.open && turn) clearTurn();
