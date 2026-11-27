@@ -130,7 +130,7 @@
       <div class="frame">
         <div class="book" id="book">
           <button class="page-open" id="page-open" type="button" aria-label="Deschide pagina pe tot ecranul">
-            <img id="page-image" draggable="false" src="pagini/01.webp" width="2400" height="970" alt="Pagina 1 din album">
+            <img id="page-image" draggable="false" src="pagini/01.webp?v=281d93210318" width="2400" height="970" alt="Pagina 1 din album">
             <span class="album-turn" id="album-turn" aria-hidden="true">
               <span class="album-half album-left" id="album-left"></span>
               <span class="album-half album-right" id="album-right"></span>
@@ -161,7 +161,7 @@
     </div>
     <div class="viewport" id="viewport"><img id="viewer-image" alt=""></div>
   </dialog>
-  <script id="pages" type="application/json">[{"src":"pagini/01.webp","width":2400,"height":970,"thumb":"pagini/01-mini.webp"},{"src":"pagini/02.webp","width":2400,"height":970,"thumb":"pagini/02-mini.webp"},{"src":"pagini/03.webp","width":2400,"height":970,"thumb":"pagini/03-mini.webp"},{"src":"pagini/04.webp","width":2400,"height":970,"thumb":"pagini/04-mini.webp"},{"src":"pagini/05.webp","width":2400,"height":970,"thumb":"pagini/05-mini.webp"},{"src":"pagini/06.webp","width":2400,"height":970,"thumb":"pagini/06-mini.webp"}]</script>
+  <script id="pages" type="application/json">[{"src":"pagini/01.webp?v=281d93210318","width":2400,"height":970,"thumb":"pagini/01-mini.webp?v=30cdff672db1"},{"src":"pagini/02.webp","width":2400,"height":970,"thumb":"pagini/02-mini.webp"},{"src":"pagini/03.webp","width":2400,"height":970,"thumb":"pagini/03-mini.webp"},{"src":"pagini/04.webp","width":2400,"height":970,"thumb":"pagini/04-mini.webp"},{"src":"pagini/05.webp","width":2400,"height":970,"thumb":"pagini/05-mini.webp"},{"src":"pagini/06.webp","width":2400,"height":970,"thumb":"pagini/06-mini.webp"}]</script>
   <script>
     const pages = JSON.parse(document.querySelector('#pages').textContent);
     const pageOpen = document.querySelector('#page-open');
