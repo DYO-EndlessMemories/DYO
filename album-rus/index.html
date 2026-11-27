@@ -71,11 +71,11 @@
     .album-back { transform: rotateY(180deg); }
     .album-turn.is-backward .album-front { background-position: left center; }
     .album-turn.is-backward .album-back { background-position: right center; }
-    .album-half::after, .album-face::after {
+    .album-face::after {
       content: ""; position: absolute; inset: 0;
       background: linear-gradient(to right, #2a190251, transparent 9%);
     }
-    .album-left::after, .album-back::after {
+    .album-back::after {
       background: linear-gradient(to left, #2a190251, transparent 9%);
     }
     .album-turn.is-backward .album-front::after {
@@ -85,12 +85,6 @@
       background: linear-gradient(to right, #2a190251, transparent 9%);
     }
     .album-face::after { opacity: var(--turn-shade, .4); }
-    .page-open::after {
-      content: ""; position: absolute; inset: 0 auto 0 50%; width: 5%;
-      transform: translateX(-50%); pointer-events: none;
-      background: linear-gradient(to right, transparent, #2e1e1325 48%, #fff5e72c 51%, transparent);
-    }
-    .page-open:has(.is-active)::after { opacity: 0; }
     .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; gap: 6px; max-width: 1050px; margin: 16px auto; }
     .controls button, .toolbar button {
       min-height: 44px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 4px;
