@@ -1,148 +1,122 @@
 {
-  const underPage = document.querySelector('#under-page');
-  const paper = document.querySelector('#fold-paper');
-  const shape = document.querySelector('#fold-shape');
-  const light = document.querySelector('#paper-light');
+  const stage = document.querySelector('#album-turn');
+  const left = document.querySelector('#album-left');
+  const right = document.querySelector('#album-right');
+  const front = document.querySelector('#album-front');
+  const back = document.querySelector('#album-back');
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-  let fold;
+  const spreads = pages.map(page => {
+    const spread = new Image();
+    spread.src = page.src;
+    return spread;
+  });
+  let turn;
   let frame = 0;
 
-  function clip(points, signedDistance, side) {
-    const result = [];
-    for (let i = 0; i < points.length; i++) {
-      const a = points[i];
-      const b = points[(i + 1) % points.length];
-      const da = signedDistance(a);
-      const db = signedDistance(b);
-      if (da * side >= 0) result.push(a);
-      if ((da * side >= 0) !== (db * side >= 0)) {
-        const fraction = da / (da - db);
-        result.push([a[0] + (b[0] - a[0]) * fraction, a[1] + (b[1] - a[1]) * fraction]);
-      }
-    }
-    return result;
+  function paint(progress) {
+    turn.progress = progress;
+    stage.style.setProperty('--turn-angle', (-turn.direction * 180 * progress) + 'deg');
+    stage.style.setProperty('--turn-shade', String(.25 + .67 * Math.sin(progress * Math.PI)));
   }
 
   function start(index) {
-    const {width, height} = pageOpen.getBoundingClientRect();
     const direction = index > current ? 1 : -1;
-    const corner = [direction === 1 ? width : 0, height];
-    fold = {index, startPage: current, width, height, direction, corner, point: corner};
-    underPage.src = pages[index].src;
-    paper.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
-    pageOpen.classList.add('is-turning');
+    const from = 'url("' + spreads[current].src + '")';
+    const to = 'url("' + spreads[index].src + '")';
+    turn = {index, from: current, direction, halfWidth: pageOpen.getBoundingClientRect().width / 2};
+    left.style.backgroundImage = direction === 1 ? from : to;
+    right.style.backgroundImage = direction === 1 ? to : from;
+    front.style.backgroundImage = from;
+    back.style.backgroundImage = to;
+    stage.classList.toggle('is-backward', direction === -1);
+    paint(0);
+    stage.classList.add('is-active');
   }
 
-  function render(x, y) {
-    const {corner, direction, width, height} = fold;
-    x = direction === 1 ? Math.min(x, corner[0] - .1) : Math.max(x, corner[0] + .1);
-    y = Math.min(height, Math.max(-height, y));
-    fold.point = [x, y];
-    const dx = corner[0] - x;
-    const dy = corner[1] - y;
-    const distance = Math.hypot(dx, dy);
-    const nx = dx / distance;
-    const ny = dy / distance;
-    const midX = (corner[0] + x) / 2;
-    const midY = (corner[1] + y) / 2;
-    const signed = ([px, py]) => (px - midX) * nx + (py - midY) * ny;
-    const rectangle = [[0, 0], [width, 0], [width, height], [0, height]];
-    const front = clip(rectangle, signed, -1);
-    image.style.clipPath = front.length < 3
-      ? 'inset(0 100% 0 0)'
-      : 'polygon(' + front.map(([px, py]) => px + 'px ' + py + 'px').join(',') + ')';
-    const back = clip(rectangle, signed, 1).map(point => {
-      const offset = 2 * signed(point);
-      return [point[0] - offset * nx, point[1] - offset * ny];
-    });
-    shape.setAttribute('points', back.map(point => point.join(',')).join(' '));
-    light.setAttribute('x1', midX);
-    light.setAttribute('y1', midY);
-    light.setAttribute('x2', x);
-    light.setAttribute('y2', y);
-  }
-
-  function clearFold() {
+  function clearTurn() {
     cancelAnimationFrame(frame);
-    fold = undefined;
-    image.style.clipPath = '';
-    pageOpen.classList.remove('is-turning');
+    stage.classList.remove('is-active');
+    turn = undefined;
   }
 
   function settle(complete) {
-    const {corner, direction, width, index, point, startPage} = fold;
+    const active = turn;
+    const end = complete ? 1 : 0;
+    const {progress, index} = active;
     if (reducedMotion.matches) {
-      clearFold();
       if (complete) showPage(index);
+      clearTurn();
       return;
     }
-    const endX = complete ? corner[0] - direction * width * 2.04 : corner[0];
-    const duration = complete ? 350 : 210;
+    const duration = 130 + Math.abs(end - progress) * 440;
     const started = performance.now();
     function animate(now) {
-      if (current !== startPage) {
-        clearFold();
+      if (turn !== active || current !== active.from) {
+        clearTurn();
         return;
       }
-      const progress = Math.min(1, (now - started) / duration);
-      const eased = 1 - (1 - progress) ** 3;
-      render(point[0] + (endX - point[0]) * eased, point[1] + (corner[1] - point[1]) * eased);
-      if (progress < 1) {
+      const fraction = Math.min(1, (now - started) / duration);
+      const ease = fraction * fraction * (3 - 2 * fraction);
+      paint(progress + (end - progress) * ease);
+      if (fraction < 1) {
         frame = requestAnimationFrame(animate);
         return;
       }
       if (complete) showPage(index);
-      clearFold();
+      clearTurn();
     }
     frame = requestAnimationFrame(animate);
   }
 
   turnPage = index => {
-    if (index < 0 || index >= pages.length || index === current || fold) return;
+    if (index < 0 || index >= pages.length || index === current || turn) return;
     if (viewer.open || reducedMotion.matches) {
       showPage(index);
       return;
     }
     start(index);
-    render(fold.corner[0] - fold.direction * fold.width * .035, fold.height * .95);
     settle(true);
   };
 
   for (const [id, direction] of [['#corner-prev', -1], ['#corner-next', 1]]) {
     const handle = document.querySelector(id);
     handle.addEventListener('pointerdown', event => {
-      if (!event.isPrimary || event.button !== 0 || fold || handle.disabled) return;
+      if (!event.isPrimary || event.button !== 0 || turn || handle.disabled) return;
+      if (reducedMotion.matches) return;
       start(current + direction);
-      fold.pointer = {id: event.pointerId, x: event.clientX, y: event.clientY};
+      turn.pointer = {id: event.pointerId, x: event.clientX, y: event.clientY};
       handle.setPointerCapture(event.pointerId);
-      render(fold.corner[0] - direction * 7, fold.corner[1] - 9);
+      paint(.04);
     });
     handle.addEventListener('pointermove', event => {
-      if (fold?.pointer?.id !== event.pointerId) return;
-      render(
-        fold.corner[0] + event.clientX - fold.pointer.x,
-        fold.corner[1] + event.clientY - fold.pointer.y,
-      );
+      if (turn?.pointer?.id !== event.pointerId) return;
+      const distance = (turn.pointer.x - event.clientX) * direction;
+      const projected = Math.max(-1, Math.min(1, 1 - distance / turn.halfWidth));
+      paint(Math.acos(projected) / Math.PI);
     });
     handle.addEventListener('pointerup', event => {
-      if (fold?.pointer?.id !== event.pointerId) return;
-      const distance = (fold.pointer.x - event.clientX) * direction;
-      const tapped = Math.hypot(event.clientX - fold.pointer.x, event.clientY - fold.pointer.y) < 9;
-      fold.pointer = undefined;
-      settle(tapped || distance > fold.width * .22);
+      if (turn?.pointer?.id !== event.pointerId) return;
+      const dx = event.clientX - turn.pointer.x;
+      const dy = event.clientY - turn.pointer.y;
+      const tapped = Math.hypot(dx, dy) < 9;
+      turn.pointer = undefined;
+      settle(tapped || -dx * direction >= turn.halfWidth * .85);
     });
     function cancelPointer(event) {
-      if (fold?.pointer?.id !== event.pointerId) return;
-      fold.pointer = undefined;
+      if (turn?.pointer?.id !== event.pointerId) return;
+      turn.pointer = undefined;
       settle(false);
     }
     handle.addEventListener('pointercancel', cancelPointer);
     handle.addEventListener('lostpointercapture', cancelPointer);
     handle.addEventListener('click', event => {
-      if (event.detail === 0) turnPage(current + direction);
+      if (event.detail === 0 || reducedMotion.matches) turnPage(current + direction);
     });
   }
 
-  thumbnails.addEventListener('click', clearFold);
-  window.addEventListener('resize', clearFold);
+  pageOpen.addEventListener('click', () => {
+    if (viewer.open && turn) clearTurn();
+  });
+  thumbnails.addEventListener('click', clearTurn);
+  window.addEventListener('resize', clearTurn);
 }

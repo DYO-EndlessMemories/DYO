@@ -45,11 +45,51 @@
     .book { position: relative; width: min(100%, 168svh); isolation: isolate; }
     .page-open { position: relative; display: block; padding: 0; border: 0; width: 100%; background: #ede5da; cursor: zoom-in; touch-action: pan-y; overflow: hidden; }
     .page-open img { display: block; width: 100%; height: auto; }
-    .page-open .under-page { position: absolute; inset: 0; visibility: hidden; }
-    .page-open.is-turning .under-page { visibility: visible; }
-    .page-open #page-image { position: relative; }
-    .fold-paper { display: none; position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-    .page-open.is-turning .fold-paper { display: block; }
+    .album-turn {
+      position: absolute; inset: 0; visibility: hidden; pointer-events: none;
+      perspective: 1600px;
+    }
+    .album-turn.is-active { visibility: visible; }
+    .album-half, .album-leaf, .album-face { position: absolute; top: 0; bottom: 0; }
+    .album-half, .album-leaf { width: 50%; }
+    .album-left { left: 0; }
+    .album-right { right: 0; }
+    .album-half, .album-face {
+      background-color: #eee3d4;
+      background-size: 200% 100%;
+      background-repeat: no-repeat;
+    }
+    .album-left, .album-back { background-position: left center; }
+    .album-right, .album-front { background-position: right center; }
+    .album-leaf {
+      left: 50%; transform-origin: left center; transform-style: preserve-3d;
+      transform: rotateY(var(--turn-angle, 0deg));
+    }
+    .album-turn.is-backward .album-leaf { left: 0; transform-origin: right center; }
+    .album-face { inset-inline: 0; backface-visibility: hidden; }
+    .album-back { transform: rotateY(180deg); }
+    .album-turn.is-backward .album-front { background-position: left center; }
+    .album-turn.is-backward .album-back { background-position: right center; }
+    .album-half::after, .album-face::after {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(to right, #2a190251, transparent 9%);
+    }
+    .album-left::after, .album-back::after {
+      background: linear-gradient(to left, #2a190251, transparent 9%);
+    }
+    .album-turn.is-backward .album-front::after {
+      background: linear-gradient(to left, #2a190251, transparent 9%);
+    }
+    .album-turn.is-backward .album-back::after {
+      background: linear-gradient(to right, #2a190251, transparent 9%);
+    }
+    .album-face::after { opacity: var(--turn-shade, .4); }
+    .page-open::after {
+      content: ""; position: absolute; inset: 0 auto 0 50%; width: 5%;
+      transform: translateX(-50%); pointer-events: none;
+      background: linear-gradient(to right, transparent, #2e1e1325 48%, #fff5e72c 51%, transparent);
+    }
+    .page-open:has(.is-active)::after { opacity: 0; }
     .corner {
       position: absolute; bottom: 0; width: 46px; height: 46px; padding: 0;
       border: 0; background: transparent; touch-action: none; cursor: grab;
@@ -64,7 +104,7 @@
     }
     .corner-left { left: 0; transform: scaleX(-1); }
     .corner-right { right: 0; }
-    .book:has(.is-turning) .corner::after { opacity: 0; }
+    .book:has(.is-active) .corner::after { opacity: 0; }
     .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; gap: 6px; max-width: 1050px; margin: 16px auto; }
     .controls button, .toolbar button {
       min-height: 44px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 4px;
@@ -110,19 +150,15 @@
       <div class="frame">
         <div class="book" id="book">
           <button class="page-open" id="page-open" type="button" aria-label="Deschide pagina pe tot ecranul">
-            <img class="under-page" id="under-page" alt="">
             <img id="page-image" src="pagini/01.webp" width="2400" height="970" alt="Pagina 1 din album">
-            <svg class="fold-paper" id="fold-paper" aria-hidden="true">
-              <defs>
-                <linearGradient id="paper-light" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#aa8e73"/>
-                  <stop offset=".24" stop-color="#e5d3bd"/>
-                  <stop offset=".65" stop-color="#fff8eb"/>
-                  <stop offset="1" stop-color="#f1e1cf"/>
-                </linearGradient>
-              </defs>
-              <polygon id="fold-shape" fill="url(#paper-light)" stroke="#a48261" stroke-width=".6"/>
-            </svg>
+            <span class="album-turn" id="album-turn" aria-hidden="true">
+              <span class="album-half album-left" id="album-left"></span>
+              <span class="album-half album-right" id="album-right"></span>
+              <span class="album-leaf">
+                <span class="album-face album-front" id="album-front"></span>
+                <span class="album-face album-back" id="album-back"></span>
+              </span>
+            </span>
           </button>
           <button class="corner corner-left" id="corner-prev" type="button" aria-label="Întoarce fila spre pagina anterioară" disabled></button>
           <button class="corner corner-right" id="corner-next" type="button" aria-label="Întoarce fila spre pagina următoare"></button>
@@ -133,7 +169,7 @@
         <output id="counter" aria-live="polite">Pagina 1 / 6</output>
         <button id="next" type="button">Înainte →</button>
       </nav>
-      <p class="turn-hint">Trage de colțul de jos ca să întorci fila.</p>
+      <p class="turn-hint">Trage de colțul de jos spre cotor ca să întorci fila.</p>
       <nav class="thumbnails" id="thumbnails" aria-label="Alege o pagină"></nav>
     </section>
   </main>
@@ -247,6 +283,6 @@
     pageOpen.addEventListener('touchcancel', () => { touchStart = undefined; });
     showPage(0);
   </script>
-  <script src="page-turn.js"></script>
+  <script src="page-turn.js?v=2"></script>
 </body>
 </html>
