@@ -1,3 +1,26 @@
+function showCurrentImport() {
+  const latest = document.querySelector("#nou[data-expires-at]");
+  if (!latest) return;
+  const link = document.querySelector('a[href="#nou"]');
+  const expires = Date.parse(latest.dataset.expiresAt);
+  let timeout;
+
+  function refresh() {
+    clearTimeout(timeout);
+    const remaining = expires - Date.now();
+    const visible = remaining > 0;
+    latest.hidden = !visible;
+    if (link) link.hidden = !visible;
+    if (visible) timeout = setTimeout(refresh, Math.min(remaining, 2 ** 31 - 1));
+  }
+
+  refresh();
+  document.addEventListener("visibilitychange", refresh);
+  window.addEventListener("pageshow", refresh);
+}
+
+showCurrentImport();
+
 let cards = [];
 let activeTitle = "";
 const dialog = document.querySelector("#lightbox");
