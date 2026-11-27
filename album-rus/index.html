@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#f6f2eb">
+  <title>Album Rus · DYO Endless Memories</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f6f2eb;
+      --ink: #4c3c32;
+      --muted: #6c5b4e;
+      --line: #dbd0c2;
+      --gold: #ad9167;
+      --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      --gutter: clamp(16px, 5vw, 76px);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.5 Helvetica, Arial, sans-serif; }
+    button { color: inherit; font: inherit; cursor: pointer; }
+    button:focus-visible { outline: 2px solid #755c39; outline-offset: 4px; }
+    header {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 16px var(--gutter); border-bottom: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand strong { font: 27px/1 var(--serif); letter-spacing: .18em; }
+    .brand small, .eyebrow { text-transform: uppercase; letter-spacing: .2em; font-size: 10px; color: var(--muted); }
+    .header-label { font: 15px var(--serif); color: var(--muted); }
+    main { max-width: 1250px; margin: auto; padding: 0 var(--gutter) 42px; }
+    .intro {
+      text-align: center; padding: clamp(26px, 5vw, 62px) 0 24px;
+      background: radial-gradient(ellipse 60% 100% at 50% 12%, #e9decd9c, transparent 80%);
+    }
+    .eyebrow { margin: 0 0 6px; }
+    h1 { font: 400 clamp(38px, 7vw, 72px)/1.05 var(--serif); margin: 0; letter-spacing: -.045em; }
+    .intro::after { content: ""; display: block; width: 42px; height: 1px; background: var(--gold); margin: 17px auto 0; }
+    .frame {
+      display: grid; place-items: center; position: relative; margin: 0 auto;
+      padding: clamp(7px, 1.4vw, 15px); background: #fffaf4; border: 1px solid var(--line);
+      box-shadow: 0 16px 42px #5b4a3e16; max-width: 1050px;
+    }
+    .book { position: relative; width: min(100%, 168svh); isolation: isolate; }
+    .page-open { position: relative; display: block; padding: 0; border: 0; width: 100%; background: #ede5da; cursor: zoom-in; touch-action: pan-y; overflow: hidden; }
+    .page-open img { display: block; width: 100%; height: auto; }
+    .page-open .under-page { position: absolute; inset: 0; visibility: hidden; }
+    .page-open.is-turning .under-page { visibility: visible; }
+    .page-open #page-image { position: relative; }
+    .fold-paper { display: none; position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    .page-open.is-turning .fold-paper { display: block; }
+    .corner {
+      position: absolute; bottom: 0; width: 46px; height: 46px; padding: 0;
+      border: 0; background: transparent; touch-action: none; cursor: grab;
+    }
+    .corner:active { cursor: grabbing; }
+    .corner:disabled { visibility: hidden; }
+    .corner::after {
+      content: ""; display: block; position: absolute; inset: auto 0 0 auto; width: 28px; height: 28px;
+      clip-path: polygon(100% 0, 100% 100%, 0 100%);
+      background: linear-gradient(135deg, #9e7953, #fff7e9 58%, #c4a684);
+      opacity: .9;
+    }
+    .corner-left { left: 0; transform: scaleX(-1); }
+    .corner-right { right: 0; }
+    .book:has(.is-turning) .corner::after { opacity: 0; }
+    .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; gap: 6px; max-width: 1050px; margin: 16px auto; }
+    .controls button, .toolbar button {
+      min-height: 44px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 4px;
+      background: #faf6f0; font-size: 13px;
+    }
+    .controls button:hover, .toolbar button:hover { background: #ede3d6; }
+    .controls button:disabled { opacity: .45; cursor: default; }
+    #prev { justify-self: start; }
+    #next { justify-self: end; }
+    #counter { text-align: center; white-space: nowrap; color: var(--muted); font-size: 13px; }
+    .turn-hint { margin: 0 0 12px; text-align: center; color: var(--muted); font-size: 12px; }
+    .thumbnails { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: clamp(5px, 1.2vw, 12px); max-width: 750px; margin: 0 auto; }
+    .thumbnails button { min-width: 0; padding: 3px; background: #fffaf4; border: 1px solid var(--line); border-radius: 3px; }
+    .thumbnails button[aria-current="page"] { border-color: #8c6e42; box-shadow: 0 0 0 1px #8c6e42; }
+    .thumbnails img { display: block; width: 100%; aspect-ratio: 2 / 1; object-fit: contain; background: #eee6db; }
+    footer { border-top: 1px solid var(--line); padding: 19px var(--gutter); text-align: center; color: var(--muted); font: 15px var(--serif); }
+    dialog { width: 100%; max-width: none; height: 100%; max-height: none; padding: 0; border: 0; color: var(--ink); background: var(--paper); }
+    dialog[open] { display: grid; grid-template-rows: auto minmax(0, 1fr); }
+    .toolbar { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+    .toolbar button:disabled { opacity: .45; cursor: default; }
+    .viewport { display: grid; place-items: center; overflow: auto; overscroll-behavior: contain; padding: 12px; background: #e8dfd3; }
+    .viewport img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
+    .viewport.zoomed { display: block; }
+    .viewport.zoomed img { width: max(175%, 1150px); max-width: none; max-height: none; height: auto; }
+    @media (max-width: 480px) {
+      .brand { gap: 9px; }
+      .brand small { font-size: 8px; }
+      .controls button, .toolbar button { padding-inline: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand"><strong>DYO</strong><small>Endless Memories</small></div>
+    <span class="header-label">Album Rus</span>
+  </header>
+  <main>
+    <section class="intro" aria-labelledby="title">
+      <p class="eyebrow">Previzualizare album</p>
+      <h1 id="title">Amintiri de clasă</h1>
+    </section>
+    <section aria-label="Paginile albumului">
+      <div class="frame">
+        <div class="book" id="book">
+          <button class="page-open" id="page-open" type="button" aria-label="Deschide pagina pe tot ecranul">
+            <img class="under-page" id="under-page" alt="">
+            <img id="page-image" src="pagini/01.webp" width="2400" height="970" alt="Pagina 1 din album">
+            <svg class="fold-paper" id="fold-paper" aria-hidden="true">
+              <defs>
+                <linearGradient id="paper-light" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#aa8e73"/>
+                  <stop offset=".24" stop-color="#e5d3bd"/>
+                  <stop offset=".65" stop-color="#fff8eb"/>
+                  <stop offset="1" stop-color="#f1e1cf"/>
+                </linearGradient>
+              </defs>
+              <polygon id="fold-shape" fill="url(#paper-light)" stroke="#a48261" stroke-width=".6"/>
+            </svg>
+          </button>
+          <button class="corner corner-left" id="corner-prev" type="button" aria-label="Întoarce fila spre pagina anterioară" disabled></button>
+          <button class="corner corner-right" id="corner-next" type="button" aria-label="Întoarce fila spre pagina următoare"></button>
+        </div>
+      </div>
+      <nav class="controls" aria-label="Răsfoiește albumul">
+        <button id="prev" type="button" disabled>← Înapoi</button>
+        <output id="counter" aria-live="polite">Pagina 1 / 6</output>
+        <button id="next" type="button">Înainte →</button>
+      </nav>
+      <p class="turn-hint">Trage de colțul de jos ca să întorci fila.</p>
+      <nav class="thumbnails" id="thumbnails" aria-label="Alege o pagină"></nav>
+    </section>
+  </main>
+  <footer>DYO Endless Memories</footer>
+  <dialog id="viewer" aria-label="Previzualizare în detaliu">
+    <div class="toolbar">
+      <button id="viewer-prev" type="button" aria-label="Pagina anterioară">←</button>
+      <button id="viewer-next" type="button" aria-label="Pagina următoare">→</button>
+      <button id="zoom" type="button" aria-pressed="false">Mărește</button>
+      <button id="close" type="button">Închide ×</button>
+    </div>
+    <div class="viewport" id="viewport"><img id="viewer-image" alt=""></div>
+  </dialog>
+  <script id="pages" type="application/json">[{"src":"pagini/01.webp","width":2400,"height":970,"thumb":"pagini/01-mini.webp"},{"src":"pagini/02.webp","width":2400,"height":970,"thumb":"pagini/02-mini.webp"},{"src":"pagini/03.webp","width":2400,"height":970,"thumb":"pagini/03-mini.webp"},{"src":"pagini/04.webp","width":2400,"height":970,"thumb":"pagini/04-mini.webp"},{"src":"pagini/05.webp","width":2400,"height":970,"thumb":"pagini/05-mini.webp"},{"src":"pagini/06.webp","width":2400,"height":970,"thumb":"pagini/06-mini.webp"}]</script>
+  <script>
+    const pages = JSON.parse(document.querySelector('#pages').textContent);
+    const pageOpen = document.querySelector('#page-open');
+    const image = document.querySelector('#page-image');
+    const counter = document.querySelector('#counter');
+    const previous = document.querySelector('#prev');
+    const next = document.querySelector('#next');
+    const viewer = document.querySelector('#viewer');
+    const viewerPrevious = document.querySelector('#viewer-prev');
+    const viewerNext = document.querySelector('#viewer-next');
+    const viewerImage = document.querySelector('#viewer-image');
+    const viewport = document.querySelector('#viewport');
+    const zoomButton = document.querySelector('#zoom');
+    const thumbnails = document.querySelector('#thumbnails');
+    let current = 0;
+    let touchStart;
+    let lastSwipe = 0;
+    let turnPage = index => showPage(index);
+
+    const buttons = pages.map((page, index) => {
+      const button = document.createElement('button');
+      const thumb = document.createElement('img');
+      button.type = 'button';
+      button.setAttribute('aria-label', 'Mergi la pagina ' + (index + 1));
+      thumb.src = page.thumb;
+      thumb.alt = '';
+      button.append(thumb);
+      button.addEventListener('click', () => showPage(index));
+      thumbnails.append(button);
+      return button;
+    });
+
+    function setZoom(zoomed) {
+      viewport.classList.toggle('zoomed', zoomed);
+      zoomButton.setAttribute('aria-pressed', String(zoomed));
+      zoomButton.textContent = zoomed ? 'Potrivește' : 'Mărește';
+      viewport.scrollTo(0, 0);
+    }
+
+    function showPage(index) {
+      if (index < 0 || index >= pages.length) return;
+      current = index;
+      const page = pages[current];
+      image.src = page.src;
+      image.width = page.width;
+      image.height = page.height;
+      image.alt = 'Pagina ' + (current + 1) + ' din album';
+      counter.textContent = 'Pagina ' + (current + 1) + ' / ' + pages.length;
+      pageOpen.setAttribute('aria-label', 'Deschide pagina ' + (current + 1) + ' pe tot ecranul');
+      previous.disabled = viewerPrevious.disabled = current === 0;
+      next.disabled = viewerNext.disabled = current === pages.length - 1;
+      document.querySelector('#corner-prev').disabled = previous.disabled;
+      document.querySelector('#corner-next').disabled = next.disabled;
+      buttons.forEach((button, i) => {
+        if (i === current) button.setAttribute('aria-current', 'page');
+        else button.removeAttribute('aria-current');
+      });
+      if (viewer.open) {
+        viewerImage.src = page.src;
+        viewerImage.alt = image.alt;
+        setZoom(false);
+      }
+    }
+
+    previous.addEventListener('click', () => turnPage(current - 1));
+    next.addEventListener('click', () => turnPage(current + 1));
+    viewerPrevious.addEventListener('click', () => showPage(current - 1));
+    viewerNext.addEventListener('click', () => showPage(current + 1));
+    pageOpen.addEventListener('click', () => {
+      if (performance.now() - lastSwipe < 350 && lastSwipe !== 0) return;
+      viewer.showModal();
+      showPage(current);
+    });
+    document.querySelector('#close').addEventListener('click', () => viewer.close());
+    zoomButton.addEventListener('click', () => setZoom(!viewport.classList.contains('zoomed')));
+    document.addEventListener('keydown', event => {
+      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+      if (viewer.open && viewport.classList.contains('zoomed')) return;
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+      event.preventDefault();
+      turnPage(current + (event.key === 'ArrowLeft' ? -1 : 1));
+    });
+    pageOpen.addEventListener('touchstart', event => {
+      const touch = event.touches[0];
+      touchStart = event.touches.length === 1 ? {x: touch.clientX, y: touch.clientY} : undefined;
+    }, {passive: true});
+    pageOpen.addEventListener('touchend', event => {
+      if (!touchStart) return;
+      const touch = event.changedTouches[0];
+      const dx = touch.clientX - touchStart.x;
+      const dy = touch.clientY - touchStart.y;
+      touchStart = undefined;
+      if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+      lastSwipe = performance.now();
+      turnPage(current + (dx < 0 ? 1 : -1));
+    }, {passive: true});
+    pageOpen.addEventListener('touchcancel', () => { touchStart = undefined; });
+    showPage(0);
+  </script>
+  <script src="page-turn.js"></script>
+</body>
+</html>
